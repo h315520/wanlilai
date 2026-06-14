@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>华东猛禽 · 队内选人</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #0a0c0f;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: #d8d8d8;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body::before {
+      content: ''; position: fixed; top:0; left:0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle at 30% 30%, #1e293b, #0f1117);
+      z-index: -2;
+    }
+
+    .main-container {
+      width: 100%; max-width: 500px;
+      background: rgba(10,14,20,0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,215,0,0.2);
+      box-shadow: 0 0 30px rgba(255,140,0,0.2);
+      border-radius: 20px; padding: 14px;
+      margin-bottom: 80px;
+    }
+
+    h1 {
+      text-align: center; font-size: 1.4rem; font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #f0c27b, #ffb347, #f0c27b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 6px #ff8c00);
+      margin-bottom: 2px;
+    }
+    .subtitle {
+      text-align: center; font-size: 0.7rem; color: #b5966a;
+      letter-spacing: 2px; margin-bottom: 12px;
+    }
+
+    .status-bar {
+      background: rgba(0,0,0,0.5); border: 1px solid #b49450;
+      padding: 10px 14px; border-radius: 20px; margin-bottom: 12px;
+      text-align: center; font-weight: bold; color: #ffd966;
+      font-size: 0.9rem; backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .role-switch {
+      display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .role-btn {
+      background: rgba(30,30,40,0.7); border: 1px solid #5a4a3a; color: #aaa;
+      padding: 10px 14px; border-radius: 22px; font-weight: bold;
+      cursor: pointer; transition: 0.3s; font-size: 0.85rem;
+      backdrop-filter: blur(10px); -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .role-btn.active {
+      background: linear-gradient(135deg, #b48c3a, #ffb347);
+      border-color: #ffd966; color: #1a1a1a; box-shadow: 0 0 15px #ff8c00;
+    }
+    .role-btn.admin-btn { border-color: #ff4444; }
+    .role-btn.admin-btn.active {
+      background: linear-gradient(135deg, #cc2222, #ff4444);
+      border-color: #ff8888; color: #fff; box-shadow: 0 0 15px #ff4444;
+    }
+
+    .section-title {
+      font-size: 0.8rem; letter-spacing: 2px;
+      color: #dbb46a; margin: 10px 0 6px;
+      border-left: 3px solid #ffb347; padding-left: 10px;
+    }
+
+    textarea {
+      width: 100%; height: 100px;
+      background: rgba(15,20,25,0.8); border: 1px solid #5a4a3a;
+      color: #ffd58c; padding: 10px; border-radius: 12px;
+      font-size: 0.85rem; backdrop-filter: blur(10px); line-height: 1.5;
+      -webkit-appearance: none;
+    }
+    textarea::placeholder { color: #6a6050; }
+
+    .btn {
+      background: linear-gradient(135deg, #2a2a35, #1f1f28);
+      border: 1px solid #b49450; color: #ffd966;
+      padding: 12px 20px; border-radius: 25px; font-weight: bold;
+      cursor: pointer; transition: 0.3s; font-size: 0.9rem;
+      letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+    }
+    .btn:active { background: #b49450; color: #0a0a0a; box-shadow: 0 0 20px #ff8c00; }
+    .btn-danger { background: linear-gradient(135deg, #4d2020, #2a1515); border-color: #a55; color: #ffbcbc; }
+    .btn-danger:active { background: #a55; color: #fff; box-shadow: 0 0 20px #ff4444; }
+    .btn-small { padding: 8px 14px; font-size: 0.8rem; letter-spacing: 1px; }
+    .btn-block { width: 100%; }
+
+    .player-grid {
+      display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0;
+    }
+    .player-card {
+      background: rgba(20,25,32,0.8); backdrop-filter: blur(5px);
+      border: 1px solid #5e503a; padding: 8px 14px; border-radius: 18px;
+      font-size: 0.85rem; color: #d4c09c; cursor: pointer;
+      transition: 0.2s; font-weight: 500; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .player-card:active { transform: scale(0.95); border-color: #ffb347; }
+    /* 七彩渐变名字 */
+    .rainbow-name {
+      background: linear-gradient(90deg, #ff4444, #ff8c00, #ffe600, #44ff44, #4488ff, #aa44ff, #ff44aa);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: rainbow-shift 3s linear infinite;
+    }
+    @keyframes rainbow-shift {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+    .player-card.team-a { background: linear-gradient(145deg, #1e4728, #15301c); border-color: #7aff7a; color: #fff; }
+    .player-card.team-b { background: linear-gradient(145deg, #4a3320, #2f1e10); border-color: #ff9f4b; color: #ffe; }
+    .player-card.captain { font-weight: bold; border-width: 2px; transform: scale(1.05); }
+    .player-card.no-click { cursor: default; opacity: 0.85; }
+    .player-card.no-click:active { transform: none; }
+    .player-card .remove-x {
+      display: none;
+      margin-left: 2px; font-size: 0.7rem; color: #ff6666;
+      cursor: pointer; font-weight: bold;
+    }
+    .player-card .move-arrow {
+      display: none;
+      font-size: 0.65rem; cursor: pointer; color: #ffd966;
+      padding: 0 2px; user-select: none;
+    }
+    .player-card .move-arrow:active { color: #fff; }
+    .player-card.show-x .remove-x { display: inline; }
+    .player-card.show-arrows .move-arrow { display: inline; }
+
+    .team-container { display: flex; gap: 8px; margin: 10px 0; }
+    .team-box {
+      flex: 1; background: rgba(0,0,0,0.35); backdrop-filter: blur(10px);
+      border-radius: 14px; padding: 8px;
+      border: 1px solid rgba(255,215,0,0.2);
+    }
+    .team-label {
+      font-weight: bold; margin-bottom: 4px; font-size: 0.8rem;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* 音乐控件 */
+    .bgm-bar {
+      position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .bgm-control {
+      background: rgba(20,25,32,0.95); border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 20px; padding: 8px 16px; color: #ffd58c;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 20px rgba(255,140,0,0.3);
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bgm-icon-wrap {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #b48c3a, #ffb347);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; box-shadow: 0 0 10px rgba(255,140,0,0.4);
+    }
+    .bgm-icon-wrap.playing { animation: bgmPulse 2s ease-in-out infinite; }
+    @keyframes bgmPulse {
+      0%,100% { box-shadow: 0 0 8px rgba(255,140,0,0.3); transform: scale(1); }
+      50% { box-shadow: 0 0 18px rgba(255,140,0,0.6); transform: scale(1.06); }
+    }
+    .bgm-eq {
+      display: flex; align-items: flex-end; gap: 2px; height: 16px;
+    }
+    .bgm-eq .bar {
+      width: 2px; border-radius: 1px; background: #ffb347;
+    }
+    .bgm-eq.playing .bar:nth-child(1) { animation: eqAnim 0.8s ease-in-out infinite; }
+    .bgm-eq.playing .bar:nth-child(2) { animation: eqAnim 0.6s ease-in-out 0.15s infinite; }
+    .bgm-eq.playing .bar:nth-child(3) { animation: eqAnim 0.7s ease-in-out 0.3s infinite; }
+    .bgm-eq.playing .bar:nth-child(4) { animation: eqAnim 0.5s ease-in-out 0.1s infinite; }
+    @keyframes eqAnim {
+      0%,100% { height: 5px; }
+      50% { height: 14px; }
+    }
+
+    .signature {
+      text-align: center; padding: 12px 0; font-size: 0.8rem;
+      font-weight: bold; letter-spacing: 2px; margin-top: 6px;
+    }
+
+    .modal-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; z-index: 10001;
+    }
+    .modal-box {
+      background: #1a0808; border: 2px solid #ff4444;
+      box-shadow: 0 0 40px rgba(255,0,0,0.6); border-radius: 20px;
+      padding: 24px; text-align: center; max-width: 300px; width: 90%;
+    }
+    .modal-title { font-size: 1.4rem; color: #ff4444; font-weight: bold; margin-bottom: 10px; }
+    .modal-text { color: #ffaaaa; margin-bottom: 18px; line-height: 1.5; font-size: 0.9rem; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; }
+    .modal-btn {
+      padding: 10px 24px; border-radius: 22px; font-weight: bold;
+      cursor: pointer; border: 1px solid; transition: 0.2s; font-size: 0.9rem;
+    }
+    .modal-btn.confirm { background: #ff2222; border-color: #ff6666; color: #fff; }
+    .modal-btn.cancel { background: #2a2a2a; border-color: #555; color: #ccc; }
+
+    .hidden { display: none !important; }
+    .sync-dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .sync-dot.on { background: #5eff6e; box-shadow: 0 0 5px #5eff6e; }
+    .sync-dot.off { background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+
+    .info-text {
+      text-align: center; color: #666; font-size: 0.7rem;
+      padding: 8px 0; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="main-container">
+  <h1>华东猛禽 · 队内选人</h1>
+  <div class="subtitle">⚔️ 荣耀之战 · 阵容由你定 ⚔️</div>
+
+  <div class="role-switch">
+    <button class="role-btn admin-btn" data-role="admin">🔧</button>
+    <button class="role-btn" data-role="captainA">A队长登入</button>
+    <button class="role-btn" data-role="captainB">B队长登入</button>
+  </div>
+
+  <div class="status-bar">
+    <span id="statusLabel">⚙️ 等待管理员上传名单...</span>
+    <span class="sync-dot off" id="syncDot" title="同步状态"></span>
+  </div>
+  <div id="syncLog" style="text-align:center; font-size:0.7rem; color:#888; padding:2px 0 6px; min-height:16px;"></div>
+
+  <!-- 管理员面板 -->
+  <div id="adminPanel" class="hidden">
+    <div class="section-title">🔧 上传名单</div>
+    <textarea id="rawInput" placeholder="粘贴微信接龙后点上传"></textarea>
+    <div style="display:flex; gap:6px; margin-top:6px;">
+      <button class="btn btn-block" id="parseBtn">📤 上传名单</button>
+      <button class="btn btn-small btn-danger" id="adminClearBtn">清空</button>
+    </div>
+  </div>
+
+  <!-- 队长信息 -->
+  <div style="display:flex; gap:10px; margin:8px 0; font-size:0.85rem;">
+    <span id="captainADisplay" style="color:#5eff6e; font-weight:bold; flex:1;">🟢 A: 未选</span>
+    <span id="captainBDisplay" style="color:#ff9f4b; font-weight:bold; flex:1; text-align:right;">🟠 B: 未选</span>
+  </div>
+
+  <!-- 可选池 -->
+  <div class="section-title">🎯 可选名单 <span id="availableCount" style="font-size:0.7rem;color:#888;"></span></div>
+  <div class="player-grid" id="availablePool"></div>
+  <div id="noPlayersMsg" class="info-text">暂无名单，等待管理员上传</div>
+
+  <!-- 两队 -->
+  <div class="team-container">
+    <div class="team-box">
+      <div class="team-label" style="color:#5eff6e;">🟢 A队 <span id="teamACount"></span></div>
+      <div class="player-grid" id="teamAContainer"></div>
+    </div>
+    <div class="team-box">
+      <div class="team-label" style="color:#ff9f4b;">🟠 B队 <span id="teamBCount"></span></div>
+      <div class="player-grid" id="teamBContainer"></div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:6px; justify-content:center; margin-top:8px;">
+    <button class="btn btn-small" id="undoBtn" title="撤回上一步">↩ 撤回</button>
+    <button class="btn btn-small btn-danger" id="resetBtn">🔄 重置</button>
+    <button class="btn btn-small" id="exportBtn">📋 导出</button>
+  </div>
+</div>
+
+<div class="signature">
+  <span style="color:#ff6b6b;">快</span><span style="color:#feca57;">到</span><span style="color:#48dbfb;">碗</span><span style="color:#ff9ff3;">里</span><span style="color:#54a0ff;">来</span>
+</div>
+
+<div class="bgm-bar">
+  <div class="bgm-control" id="bgmToggle" title="背景音乐">
+    <div class="bgm-icon-wrap" id="bgmIconWrap">🎵</div>
+    <div class="bgm-eq" id="bgmEq">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+    <span id="bgmLabel" style="font-size:0.75rem;">加载中</span>
+  </div>
+</div>
+
+<audio id="bgm" loop playsinline
+  src="bgm.mp3">
+</audio>
+
+<div class="modal-overlay hidden" id="resetModal">
+  <div class="modal-box">
+    <div class="modal-title">⚠️ 危险操作</div>
+    <div class="modal-text">清空所有选人结果<br>回到队长指定阶段</div>
+    <div class="modal-btns">
+      <button class="modal-btn confirm" id="confirmReset">确认</button>
+      <button class="modal-btn cancel" id="cancelReset">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const SUPABASE_URL = 'https://hcqppynqienvhntleigi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_7wW4thaC8G5MjnEw_Oaawg_A3h8-sOK';
+const ADMIN_PASSWORD = 'admin123';
+const CAPTAIN_A_PASSWORD = '111';
+const CAPTAIN_B_PASSWORD = '222';
+
+// ==================== 状态 ====================
+let allPlayers = [];
+let captainA = null, captainB = null;
+let teamA = [], teamB = [];
+let currentPicker = null, phase = 'idle';
+let userRole = 'spectator';
+let historyStack = [];  // 撤回历史
+
+// ==================== 数据同步（fetch 直接调用 REST API）====================
+const API = SUPABASE_URL + '/rest/v1/game_state';
+const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+let syncOnline = false;
+let lastStateHash = '';
+let pollTimer = null;
+let isSaving = false;
+let lastPollTime = '';
+
+function stateHash() {
+  return JSON.stringify({ allPlayers, captainA, captainB, teamA, teamB, currentPicker, phase });
+}
+
+async function loadStateFromDB() {
+  try {
+    logStatus('⏳ 正在连接数据库...');
+    const res = await fetch(API + '?id=eq.1&select=state', { headers: { 'apikey': SUPABASE_ANON_KEY } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const arr = await res.json();
+    if (arr?.[0]?.state) {
+      const s = arr[0].state;
+      allPlayers = s.allPlayers || []; captainA = s.captainA || null; captainB = s.captainB || null;
+      teamA = s.teamA || []; teamB = s.teamB || [];
+      currentPicker = s.currentPicker || null; phase = s.phase || 'idle';
+      lastStateHash = stateHash();
+      logStatus('✅ 数据库连接成功' + (allPlayers.length ? '，已加载'+allPlayers.length+'人' : '，名单为空'));
+    } else {
+      logStatus('⚠️ 数据库无数据');
+    }
+  } catch(e) {
+    logStatus('❌ 连接失败: ' + e.message);
+    console.error('loadStateFromDB:', e);
+  }
+}
+
+// ==================== 撤回 ====================
+function pushHistory() {
+  historyStack.push({
+    allPlayers: [...allPlayers],
+    captainA, captainB,
+    teamA: [...teamA], teamB: [...teamB],
+    currentPicker, phase
+  });
+  if (historyStack.length > 30) historyStack.shift();
+}
+
+function undo() {
+  if (!historyStack.length) return false;
+  const prev = historyStack.pop();
+  allPlayers = prev.allPlayers; captainA = prev.captainA; captainB = prev.captainB;
+  teamA = prev.teamA; teamB = prev.teamB;
+  currentPicker = prev.currentPicker; phase = prev.phase;
+  return true;
+}
+
+async function saveStateToDB() {
+  isSaving = true;
+  const state = { allPlayers, captainA, captainB, teamA, teamB, currentPicker, phase };
+  try {
+    const res = await fetch(API + '?id=eq.1', {
+      method: 'PATCH',
+      headers: HEADERS,
+      body: JSON.stringify({ state, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    lastStateHash = stateHash();
+    if (!syncOnline) { syncOnline = true; updateSyncDot(true); }
+    logStatus('📤 数据已保存');
+  } catch(e) {
+    logStatus('❌ 保存失败: ' + e.message);
+    syncOnline = false; updateSyncDot(false);
+    console.error('saveStateToDB:', e);
+  }
+  setTimeout(() => { isSaving = false; }, 500);
+}
+
+function startPolling() {
+  logStatus('🔄 启动轮询中...');
+  let pollCount = 0;
+  pollTimer = setInterval(async () => {
+    if (isSaving) return;
+    pollCount++;
+    try {
+      const res = await fetch(API + '?id=eq.1&select=state', { headers: { 'apikey': SUPABASE_ANON_KEY } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.json();
+      if (arr?.[0]?.state) {
+        const remoteHash = JSON.stringify(arr[0].state);
+        if (remoteHash !== lastStateHash) {
+          const s = arr[0].state;
+          allPlayers = s.allPlayers || []; captainA = s.captainA || null; captainB = s.captainB || null;
+          teamA = s.teamA || []; teamB = s.teamB || [];
+          currentPicker = s.currentPicker || null; phase = s.phase || 'idle';
+          lastStateHash = remoteHash;
+          render();
+          logStatus('🔄 检测到更新，已同步 (轮询#'+pollCount+')');
+        }
+        if (!syncOnline) { syncOnline = true; updateSyncDot(true); }
+      }
+      lastPollTime = new Date().toLocaleTimeString();
+    } catch(e) {
+      if (syncOnline) { syncOnline = false; updateSyncDot(false); }
+      logStatus('⚠️ 轮询失败: ' + e.message + ' ('+lastPollTime+')');
+    }
+  }, 1500);
+  syncOnline = true;
+  updateSyncDot(true);
+  logStatus('🔄 轮询已启动 (每1.5秒)');
+}
+
+function logStatus(msg) {
+  console.log('[同步]', msg);
+  // 同时在页面上显示最后一条日志
+  const el = document.getElementById('syncLog');
+  if (el) el.textContent = msg;
+}
+
+// ==================== DOM ====================
+const $ = id => document.getElementById(id);
+const statusLabel = $('statusLabel');
+const availablePool = $('availablePool');
+const teamAContainer = $('teamAContainer'), teamBContainer = $('teamBContainer');
+const captainADisplay = $('captainADisplay'), captainBDisplay = $('captainBDisplay');
+const availableCount = $('availableCount'), teamACount = $('teamACount'), teamBCount = $('teamBCount');
+const rawInput = $('rawInput'), syncDot = $('syncDot'), adminPanel = $('adminPanel');
+const noPlayersMsg = $('noPlayersMsg');
+
+// ==================== BGM（点击按钮播放/暂停）====================
+const bgm = $('bgm'), bgmToggle = $('bgmToggle');
+const bgmIconWrap = $('bgmIconWrap'), bgmEq = $('bgmEq'), bgmLabel = $('bgmLabel');
+let bgmPlaying = false;
+
+function updateBgmUI() {
+  if (bgmPlaying) {
+    bgmIconWrap.classList.add('playing'); bgmEq.classList.add('playing');
+    bgmIconWrap.textContent = '🎵'; bgmLabel.textContent = '播放中';
+  } else {
+    bgmIconWrap.classList.remove('playing'); bgmEq.classList.remove('playing');
+    bgmIconWrap.textContent = '🎵'; bgmLabel.textContent = '点击播放';
+  }
+}
+
+// 点击音乐按钮直接播放/暂停（用户手势保证手机浏览器接受）
+bgmToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (bgm.paused) {
+    bgm.play().then(() => { bgmPlaying = true; updateBgmUI(); })
+      .catch(() => { bgmLabel.textContent = '播放失败'; });
+  } else {
+    bgm.pause();
+    bgmPlaying = false;
+    updateBgmUI();
+  }
+});
+
+bgm.addEventListener('play',  () => { bgmPlaying = true;  updateBgmUI(); });
+bgm.addEventListener('pause', () => { bgmPlaying = false; updateBgmUI(); });
+bgm.addEventListener('error', () => { bgmPlaying = false; updateBgmUI(); bgmLabel.textContent = '加载失败'; });
+
+updateBgmUI();
+
+// ==================== 身份切换 ====================
+document.querySelectorAll('.role-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    try {
+      const role = btn.dataset.role;
+      if (role === 'admin') {
+        const pwd = prompt('管理员密码：');
+        if (pwd === null) return;
+        if (pwd !== ADMIN_PASSWORD) { alert('密码错误'); return; }
+      } else if (role === 'captainA' || role === 'captainB') {
+        const label = role === 'captainA' ? '队长A' : '队长B';
+        const pwd = prompt(label + '密码：');
+        if (pwd === null) return;
+        if (pwd !== (role === 'captainA' ? CAPTAIN_A_PASSWORD : CAPTAIN_B_PASSWORD)) { alert('密码错误'); return; }
+      }
+      userRole = role;
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (adminPanel) adminPanel.classList.toggle('hidden', userRole !== 'admin');
+      const rb = $('resetBtn'); if (rb) rb.classList.toggle('hidden', userRole === 'spectator');
+      const ub = $('undoBtn'); if (ub) ub.classList.toggle('hidden', userRole === 'spectator');
+      render();
+    } catch(e) { console.error(e); alert('操作失败，请刷新'); }
+  });
+});
+
+// ==================== 解析名单 ====================
+function parseList(raw) {
+  const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const players = [];
+  for (let line of lines) {
+    let c = line.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'').trim();
+    if (!c) continue;
+    if (/^#/.test(c)) continue;
+    if (/^(报名|接龙|替补|候补|注意事项|规则|周三|周四|周五|周六|周日|周一|周二|明天|今天|昨天|各位|大家好|兄弟们)/.test(c)) continue;
+    const m = c.match(/^(\d+)\s*[\.\、\．\,\)\）]\s*(.+)$/);
+    if (!m) continue;
+    let name = m[2].trim();
+    if (!name) continue;
+    name = name.replace(/[\.\。]+$/,'').trim(); if (!name) continue;
+    name = name.replace(/[\s\(（]*替补[\)）]?\s*$/g,'').trim(); if (!name) continue;
+    name = name.replace(/\s{2,}.*$/,'').trim(); if (!name) continue;
+    name = name.replace(/[\s]+(?:早的话|不一定|尽量|可能|应该|看情况|再说|有空|下次|晚点|晚些|暂定|待定|也许|或许|差不多|争取|不确定|到时候).*$/i,'').trim();
+    if (!name) continue;
+    if (name.includes('*')) name = name.split('*').pop().trim();
+    if (!name) continue;
+    if (name.length < 2 && !/[一-鿿]/.test(name)) continue;
+    if (!players.includes(name)) players.push(name);
+  }
+  // 排序：名字末尾有数字的按数字从高到低排前面，无数字的保持原顺序
+  const withNum = [], withoutNum = [];
+  players.forEach(p => {
+    const m = p.match(/(\d+)$/);
+    if (m) withNum.push({ name: p, num: parseInt(m[1]) });
+    else withoutNum.push(p);
+  });
+  withNum.sort((a, b) => b.num - a.num);
+  return [...withNum.map(x => x.name), ...withoutNum];
+}
+
+$('parseBtn').addEventListener('click', async () => {
+  if (userRole !== 'admin') { alert('仅管理员'); return; }
+  const raw = rawInput.value;
+  if (!raw.trim()) { alert('请先粘贴微信接龙'); return; }
+  const players = parseList(raw);
+  if (players.length < 2) { alert('解析失败，仅' + players.length + '人。格式：1. 昵称'); return; }
+  pushHistory();
+  allPlayers = players; captainA = null; captainB = null;
+  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
+  render(); await saveStateToDB();
+  statusLabel.textContent = '✅ 已上传 ' + players.length + ' 名玩家';
+});
+
+$('adminClearBtn').addEventListener('click', async () => {
+  if (userRole !== 'admin') return;
+  if (!confirm('确认清空？')) return;
+  pushHistory();
+  allPlayers = []; captainA = null; captainB = null;
+  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
+  render(); await saveStateToDB();
+});
+
+// ==================== 选人 ====================
+function handlePick(player) {
+  if (userRole === 'spectator') return;
+  pushHistory();
+  const sel = [...teamA, ...teamB];
+
+  if (phase === 'idle') {
+    if (userRole === 'captainA') {
+      if (captainB === player) { alert('已是队长B'); return; }
+      if (sel.includes(player) && player !== captainA) { alert('已被选走'); return; }
+      if (captainA === player) { captainA = null; teamA = teamA.filter(p=>p!==player); }
+      else {
+        if (captainA) teamA = teamA.filter(p=>p!==captainA);
+        captainA = player; if (!teamA.includes(player)) teamA.push(player);
+      }
+      if (captainA && captainB) { phase = 'pick'; currentPicker = 'A'; }
+      render(); saveStateToDB(); return;
+    }
+    if (userRole === 'captainB') {
+      if (captainA === player) { alert('已是队长A'); return; }
+      if (sel.includes(player) && player !== captainB) { alert('已被选走'); return; }
+      if (captainB === player) { captainB = null; teamB = teamB.filter(p=>p!==player); }
+      else {
+        if (captainB) teamB = teamB.filter(p=>p!==captainB);
+        captainB = player; if (!teamB.includes(player)) teamB.push(player);
+      }
+      if (captainA && captainB) { phase = 'pick'; currentPicker = 'A'; }
+      render(); saveStateToDB(); return;
+    }
+  }
+
+  if (phase === 'pick') {
+    if (userRole === 'captainA' && currentPicker !== 'A') { alert('还没轮到你'); return; }
+    if (userRole === 'captainB' && currentPicker !== 'B') { alert('还没轮到你'); return; }
+    if (sel.includes(player)) { alert('已被选走'); return; }
+    if (player === captainA || player === captainB) { alert('队长已在队中'); return; }
+    if (!confirm('选「' + player + '」加入' + (currentPicker==='A'?'A队':'B队') + '？')) return;
+    if (currentPicker === 'A') teamA.push(player); else teamB.push(player);
+    const rem = allPlayers.filter(p => ![...teamA, ...teamB].includes(p));
+    if (rem.length === 0) { phase = 'done'; currentPicker = null; }
+    else currentPicker = currentPicker === 'A' ? 'B' : 'A';
+    render(); saveStateToDB();
+  }
+}
+
+// ==================== 排序（上下箭头按钮）====================
+function movePlayer(name, dir) {
+  pushHistory();
+  const sel = [...teamA, ...teamB];
+  const available = allPlayers.filter(p => !sel.includes(p));
+  const idx = available.indexOf(name);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= available.length) return;
+  // 交换
+  [available[idx], available[newIdx]] = [available[newIdx], available[idx]];
+  // 重建 allPlayers
+  const selectedSet = new Set(sel);
+  const newAll = [];
+  let availIdx = 0;
+  for (const p of allPlayers) {
+    if (selectedSet.has(p)) { newAll.push(p); }
+    else { newAll.push(available[availIdx++]); }
+  }
+  allPlayers = newAll;
+  render();
+  saveStateToDB();
+}
+
+// ==================== 渲染（手机版：只显示可选池+队伍）====================
+function render() {
+  const sel = [...teamA, ...teamB];
+  const available = allPlayers.filter(p => !sel.includes(p));
+
+  // 状态栏
+  if (allPlayers.length === 0) {
+    statusLabel.textContent = '⚙️ 等待管理员上传名单...';
+  } else if (phase === 'idle') {
+    if (!captainA && !captainB) statusLabel.textContent = '⚙️ 等待队长指定...';
+    else if (!captainA) statusLabel.textContent = '⚙️ 等待队长A...';
+    else if (!captainB) statusLabel.textContent = '⚙️ 等待队长B...';
+    else statusLabel.textContent = '🎯 A队先选！';
+  } else if (phase === 'pick') {
+    statusLabel.textContent = '🎯 ' + (currentPicker==='A'?'队长A':'队长B') + ' 选人中（剩'+available.length+'人）';
+  } else if (phase === 'done') {
+    statusLabel.textContent = '✅ 完成！A队'+teamA.length+'人 B队'+teamB.length+'人';
+  }
+  updateSyncDot(syncOnline);
+
+  // 队长
+  captainADisplay.textContent = '🟢 A: ' + (captainA || '未选');
+  captainBDisplay.textContent = '🟠 B: ' + (captainB || '未选');
+
+  // 可选池（排序箭头 + 管理员删除按钮）
+  const canEdit = userRole !== 'spectator';
+  const isAdmin = userRole === 'admin';
+  availableCount.textContent = available.length ? '('+available.length+'人)' : '';
+  availablePool.innerHTML = available.map((p, i) => {
+    let cls = 'player-card';
+    if (isAdmin) cls += ' show-x';
+    if (isAdmin) cls += ' show-arrows';
+    let btns = '';
+    if (isAdmin) {
+      btns += '<span class="move-arrow" data-move="'+esc(p)+'" data-dir="-1" title="上移">▲</span>';
+      btns += '<span class="move-arrow" data-move="'+esc(p)+'" data-dir="1" title="下移">▼</span>';
+    }
+    if (isAdmin) {
+      btns += '<span class="remove-x" data-del="'+esc(p)+'" title="从名单删除">✕</span>';
+    }
+    return '<span class="'+cls+'" data-player="'+esc(p)+'"><span class="rainbow-name">'+p+'</span> '+btns+'</span>';
+  }).join('');
+  noPlayersMsg.classList.toggle('hidden', allPlayers.length > 0);
+
+  // 队伍（显示删除按钮）
+  const sortT = (t, cap) => {
+    const r = t.filter(p=>p!==cap);
+    return (cap && t.includes(cap)) ? [cap, ...r] : t;
+  };
+  const makeTeamCard = (p, team, cap) => {
+    const isCap = p === cap;
+    const cls = 'team-' + (team === 'A' ? 'a' : 'b');
+    let html = '<span class="player-card ' + cls + (isCap ? ' captain' : '') + ' no-click';
+    if (canEdit) html += ' show-x';
+    html += '">' + p + (isCap ? ' 👑' : '');
+    if (canEdit) html += '<span class="remove-x" data-remove="'+esc(p)+'" data-team="'+team+'" title="移除"> ✕</span>';
+    html += '</span>';
+    return html;
+  };
+  const dA = sortT(teamA, captainA), dB = sortT(teamB, captainB);
+  teamAContainer.innerHTML = dA.map(p => makeTeamCard(p, 'A', captainA)).join('');
+  teamBContainer.innerHTML = dB.map(p => makeTeamCard(p, 'B', captainB)).join('');
+  teamACount.textContent = teamA.length ? teamA.length+'人' : '';
+  teamBCount.textContent = teamB.length ? teamB.length+'人' : '';
+
+  // 事件：点击选人 + 排序箭头 + 删除队员
+  availablePool.querySelectorAll('.player-card').forEach(card => {
+    card.addEventListener('click', () => handlePick(card.dataset.player));
+  });
+  // 排序箭头
+  document.querySelectorAll('.move-arrow').forEach(arrow => {
+    arrow.addEventListener('click', (e) => {
+      e.stopPropagation();
+      movePlayer(arrow.dataset.move, parseInt(arrow.dataset.dir));
+    });
+  });
+  // 删除队员按钮
+  document.querySelectorAll('.remove-x[data-remove]').forEach(x => {
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const player = x.dataset.remove;
+      const team = x.dataset.team;
+      if (confirm('将「' + player + '」移出队伍？')) removePlayer(player, team);
+    });
+  });
+  // 从名单中彻底删除（仅管理员）
+  document.querySelectorAll('.remove-x[data-del]').forEach(x => {
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const player = x.dataset.del;
+      if (!confirm('将「' + player + '」从名单中彻底移除？')) return;
+      pushHistory();
+      // 从队伍中移除
+      teamA = teamA.filter(p => p !== player);
+      teamB = teamB.filter(p => p !== player);
+      if (captainA === player) captainA = null;
+      if (captainB === player) captainB = null;
+      // 从名单移除
+      allPlayers = allPlayers.filter(p => p !== player);
+      // 检查选人是否完成
+      if (phase === 'done') {
+        phase = 'pick';
+        currentPicker = (teamA.length <= teamB.length) ? 'A' : 'B';
+      }
+      // 如果队长被删，回到idle
+      if (!captainA || !captainB) {
+        if (phase === 'pick' && (!captainA || !captainB)) phase = 'idle';
+        currentPicker = null;
+      }
+      render(); saveStateToDB();
+    });
+  });
+}
+
+// ==================== 撤回 & 重置 & 导出 ====================
+$('undoBtn').addEventListener('click', () => {
+  if (userRole === 'spectator') { alert('仅队长/管理员可撤回'); return; }
+  if (!historyStack.length) { alert('没有可撤回的操作'); return; }
+  if (!undo()) { alert('撤回失败'); return; }
+  render(); saveStateToDB();
+  logStatus('↩ 已撤回上一步');
+});
+
+// 删除队员（从队伍中移除）
+function removePlayer(player, team) {
+  if (userRole === 'spectator') return;
+  pushHistory();
+  if (phase === 'idle') {
+    // 队长指定阶段：取消队长
+    if (player === captainA) { captainA = null; teamA = teamA.filter(p => p !== player); }
+    if (player === captainB) { captainB = null; teamB = teamB.filter(p => p !== player); }
+  } else {
+    if (team === 'A') teamA = teamA.filter(p => p !== player);
+    else teamB = teamB.filter(p => p !== player);
+    // 如果队长被移除但仍是队长身份，保留队长身份
+    if (player === captainA && !teamA.includes(captainA)) { /* captainA stays set */ }
+    if (player === captainB && !teamB.includes(captainB)) { /* captainB stays set */ }
+    // 检查是否要回退阶段
+    if (phase === 'done') {
+      phase = 'pick';
+      currentPicker = (teamA.length <= teamB.length) ? 'A' : 'B';
+    }
+  }
+  render(); saveStateToDB();
+}
+
+$('resetBtn').addEventListener('click', () => {
+  if (userRole === 'spectator') { alert('仅队长/管理员可重置'); return; }
+  $('resetModal').classList.remove('hidden');
+});
+$('cancelReset').addEventListener('click', () => $('resetModal').classList.add('hidden'));
+$('resetModal').addEventListener('click', e => { if (e.target === $('resetModal')) $('resetModal').classList.add('hidden'); });
+$('confirmReset').addEventListener('click', async () => {
+  $('resetModal').classList.add('hidden');
+  pushHistory();
+  captainA = null; captainB = null;
+  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
+  render(); await saveStateToDB();
+});
+
+$('exportBtn').addEventListener('click', () => {
+  if (!allPlayers.length) { alert('无数据'); return; }
+  const sortT = (t, cap) => {
+    const r = t.filter(p=>p!==cap);
+    return (cap && t.includes(cap)) ? [cap, ...r] : t;
+  };
+  const text = '🟢 A队('+teamA.length+'): '+sortT(teamA,captainA).join('、')+'\n\n🟠 B队('+teamB.length+'): '+sortT(teamB,captainB).join('、')+'\n\n📅 '+new Date().toLocaleString();
+  navigator.clipboard.writeText(text).then(()=>alert('已复制！')).catch(()=>prompt('复制：',text));
+});
+
+// ==================== 工具 ====================
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function updateSyncDot(on) { if(syncDot){ syncDot.className = 'sync-dot '+(on?'on':'off'); syncDot.title = on?'已同步':'未连接'; } }
+
+// ==================== 启动 ====================
+async function boot() {
+  render();
+  statusLabel.textContent = '⏳ 连接中...';
+
+  await loadStateFromDB();
+  render();
+  startPolling();
+
+  if (allPlayers.length) statusLabel.textContent = '✅ 已同步 '+allPlayers.length+' 人';
+  else statusLabel.textContent = '⚙️ 等待管理员上传名单...';
+}
+boot();
+</script>
+</body>
+</html>
