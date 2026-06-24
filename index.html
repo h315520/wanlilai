@@ -1,848 +1,1570 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>巨龙传说 · 队内选人</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background: #0a0c0f;
-      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      color: #d8d8d8;
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow-x: hidden;
-      -webkit-tap-highlight-color: transparent;
-    }
-    body::before {
-      content: ''; position: fixed; top:0; left:0;
-      width: 100%; height: 100%;
-      background: radial-gradient(circle at 30% 30%, #1e293b, #0f1117);
-      z-index: -2;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS传说 - 玩家数据分析器</title>
+<style>
+:root {
+  --accent: #FF6B35;
+  --accent2: #FF8C5A;
+  --accent-glow: rgba(255,107,53,0.4);
+  --accent-dim: rgba(255,107,53,0.08);
+  --bg: #0a0c1a;
+  --card-bg: rgba(255,255,255,0.035);
+  --card-border: rgba(255,255,255,0.07);
+  --card-hover-border: rgba(255,107,53,0.25);
+  --label: #b0b8c8;
+  --value: #FFFFFF;
+  --gold: #FFD700;
+  --red: #FF4444;
+  --green: #00D68F;
+  --blue: #00b4d8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,107,53,0.3); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,107,53,0.5); }
 
-    .main-container {
-      width: 100%; max-width: 500px;
-      background: rgba(10,14,20,0.85);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,215,0,0.2);
-      box-shadow: 0 0 30px rgba(255,140,0,0.2);
-      border-radius: 20px; padding: 14px;
-      margin-bottom: 80px;
-    }
+body {
+  min-height:100vh;
+  background: url('https://haowallpaper.com/link/common/file/previewFileImg/17282712143449472') center/cover fixed no-repeat, #0a0c1a;
+  color:var(--value);
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  display:flex; justify-content:center; padding:20px; position:relative;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:rgba(10,12,26,0.72);
+}
+/* 扫描线效果 */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,107,53,0.015) 2px,rgba(255,107,53,0.015) 4px);
+}
+.container { width:100%; max-width:780px; display:flex; flex-direction:column; gap:18px; position:relative; z-index:1; }
 
-    h1 {
-      text-align: center; font-size: 1.4rem; font-weight: 900;
-      letter-spacing: 3px;
-      background: linear-gradient(135deg, #f0c27b, #ffb347, #f0c27b);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 6px #ff8c00);
-      margin-bottom: 2px;
-    }
-    .subtitle {
-      text-align: center; font-size: 0.7rem; color: #b5966a;
-      letter-spacing: 2px; margin-bottom: 12px;
-    }
+/* 头部 */
+.header { text-align:center; padding:28px 0 4px; }
+.header h1 {
+  font-size:26px; font-weight:900;
+  letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2),var(--gold));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:none;
+  position:relative;
+}
+.header h1::after {
+  content:'';
+  display:block;
+  width:60px;
+  height:3px;
+  margin:10px auto 0;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  border-radius:2px;
+}
+.header .subtitle {
+  font-size:11px;
+  color:var(--label);
+  margin-top:8px;
+  font-weight:600;
+  letter-spacing:3px;
+  opacity:0.6;
+}
 
-    .status-bar {
-      background: rgba(0,0,0,0.5); border: 1px solid #b49450;
-      padding: 10px 14px; border-radius: 20px; margin-bottom: 12px;
-      text-align: center; font-weight: bold; color: #ffd966;
-      font-size: 0.9rem; backdrop-filter: blur(5px);
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      flex-wrap: wrap;
-    }
+/* 输入行 */
+.input-row {
+  display:flex; gap:8px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  padding:5px;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  transition:border-color 0.3s, box-shadow 0.3s;
+}
+.input-row:focus-within {
+  border-color:var(--accent);
+  box-shadow:0 0 20px rgba(255,107,53,0.15);
+}
+.input-row input {
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:var(--value);
+  font-size:14px;
+  padding:10px 14px;
+}
+.input-row input::placeholder { color:rgba(255,255,255,0.35); }
+.input-row button {
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
+  border-radius:8px;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  padding:10px 22px;
+  cursor:pointer;
+  transition:all 0.25s;
+  white-space:nowrap;
+  position:relative;
+  overflow:hidden;
+}
+.input-row button::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  opacity:0;
+  transition:opacity 0.25s;
+}
+.input-row button:hover:not(:disabled)::before { opacity:1; }
+.input-row button:active:not(:disabled) { transform:scale(0.96); }
+.input-row button:disabled { opacity:0.35; cursor:not-allowed; }
+.input-row button span { position:relative; z-index:1; }
+.input-row .btn-month {
+  background:transparent;
+  border:1.5px solid rgba(255,107,53,0.5);
+  color:var(--accent);
+  font-size:12px;
+  padding:10px 14px;
+  transition:all 0.25s;
+}
+.input-row .btn-month:hover:not(:disabled) {
+  background:var(--accent-dim);
+  border-color:var(--accent);
+  box-shadow:0 0 15px rgba(255,107,53,0.2);
+}
 
-    .role-switch {
-      display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
-    }
-    .role-btn {
-      background: rgba(30,30,40,0.7); border: 1px solid #5a4a3a; color: #aaa;
-      padding: 10px 14px; border-radius: 22px; font-weight: bold;
-      cursor: pointer; transition: 0.3s; font-size: 0.85rem;
-      backdrop-filter: blur(10px); -webkit-tap-highlight-color: transparent;
-      white-space: nowrap;
-    }
-    .role-btn.active {
-      background: linear-gradient(135deg, #b48c3a, #ffb347);
-      border-color: #ffd966; color: #1a1a1a; box-shadow: 0 0 15px #ff8c00;
-    }
-    .role-btn.admin-btn { border-color: #ff4444; }
-    .role-btn.admin-btn.active {
-      background: linear-gradient(135deg, #cc2222, #ff4444);
-      border-color: #ff8888; color: #fff; box-shadow: 0 0 15px #ff4444;
-    }
+/* 进度条 */
+.loading-progress { margin:12px auto 0; max-width:280px; }
+.loading-progress .pbar-track {
+  height:6px;
+  background:rgba(255,255,255,0.06);
+  border-radius:3px;
+  overflow:hidden;
+  position:relative;
+}
+.loading-progress .pbar-fill {
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--gold));
+  border-radius:3px;
+  transition:width 0.15s linear;
+  position:relative;
+}
+.loading-progress .pbar-fill::after {
+  content:'';
+  position:absolute;
+  right:0; top:0;
+  width:20px; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));
+  border-radius:3px;
+}
+.loading-progress .pbar-label { font-size:11px; color:var(--label); margin-top:6px; }
 
-    .section-title {
-      font-size: 0.8rem; letter-spacing: 2px;
-      color: #dbb46a; margin: 10px 0 6px;
-      border-left: 3px solid #ffb347; padding-left: 10px;
-    }
+/* 状态 */
+.status-box { text-align:center; padding:16px; display:none; }
+.status-box.loading { display:block; color:var(--accent); }
+.status-box.error { display:block; color:var(--red); }
+.status-box.error .err-icon { font-size:32px; display:block; margin-bottom:8px; }
 
-    textarea {
-      width: 100%; height: 100px;
-      background: rgba(15,20,25,0.8); border: 1px solid #5a4a3a;
-      color: #ffd58c; padding: 10px; border-radius: 12px;
-      font-size: 0.85rem; backdrop-filter: blur(10px); line-height: 1.5;
-      -webkit-appearance: none;
-    }
-    textarea::placeholder { color: #6a6050; }
+.crosshair {
+  display:inline-block;
+  width:28px; height:28px;
+  vertical-align:middle;
+  margin-right:8px;
+  animation:rotate 1.2s linear infinite;
+  filter:drop-shadow(0 0 4px var(--accent-glow));
+}
+.crosshair svg { width:100%; height:100%; }
+@keyframes rotate { to { transform:rotate(360deg); } }
 
-    .btn {
-      background: linear-gradient(135deg, #2a2a35, #1f1f28);
-      border: 1px solid #b49450; color: #ffd966;
-      padding: 12px 20px; border-radius: 25px; font-weight: bold;
-      cursor: pointer; transition: 0.3s; font-size: 0.9rem;
-      letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      -webkit-tap-highlight-color: transparent;
-      text-align: center;
-    }
-    .btn:active { background: #b49450; color: #0a0a0a; box-shadow: 0 0 20px #ff8c00; }
-    .btn-danger { background: linear-gradient(135deg, #4d2020, #2a1515); border-color: #a55; color: #ffbcbc; }
-    .btn-danger:active { background: #a55; color: #fff; box-shadow: 0 0 20px #ff4444; }
-    .btn-small { padding: 8px 14px; font-size: 0.8rem; letter-spacing: 1px; }
-    .btn-block { width: 100%; }
+/* 空状态 */
+.empty-state {
+  text-align:center;
+  padding:60px 20px;
+  border:2px dashed rgba(255,255,255,0.08);
+  border-radius:16px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  opacity:0.6;
+  transition:opacity 0.3s, border-color 0.3s;
+}
+.empty-state:hover { opacity:0.8; border-color:rgba(255,107,53,0.2); }
+.empty-state .empty-icon { width:64px; height:64px; opacity:0.4; }
+.empty-state .empty-icon svg { width:100%; height:100%; filter:drop-shadow(0 0 6px rgba(255,107,53,0.2)); }
+.empty-state .empty-text { font-size:15px; color:#fff; letter-spacing:1px; font-weight:600; }
 
-    .player-grid {
-      display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0;
-    }
-    .player-card {
-      background: rgba(20,25,32,0.8); backdrop-filter: blur(5px);
-      border: 1px solid #5e503a; padding: 8px 14px; border-radius: 18px;
-      font-size: 0.85rem; color: #d4c09c; cursor: pointer;
-      transition: 0.2s; font-weight: 500; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
-    .player-card:active { transform: scale(0.95); border-color: #ffb347; }
-    /* 七彩渐变名字 */
-    .rainbow-name {
-      background: linear-gradient(90deg, #ff4444, #ff8c00, #ffe600, #44ff44, #4488ff, #aa44ff, #ff44aa);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: rainbow-shift 3s linear infinite;
-    }
-    @keyframes rainbow-shift {
-      0% { background-position: 0% center; }
-      100% { background-position: 200% center; }
-    }
-    .player-card.team-a { background: linear-gradient(145deg, #1e4728, #15301c); border-color: #7aff7a; color: #fff; }
-    .player-card.team-b { background: linear-gradient(145deg, #4a3320, #2f1e10); border-color: #ff9f4b; color: #ffe; }
-    .player-card.captain { font-weight: bold; border-width: 2px; transform: scale(1.05); }
-    .player-card.no-click { cursor: default; opacity: 0.85; }
-    .player-card.no-click:active { transform: none; }
-    .player-card .remove-x {
-      display: none;
-      margin-left: 2px; font-size: 0.7rem; color: #ff6666;
-      cursor: pointer; font-weight: bold;
-    }
-    .player-card .move-arrow {
-      display: none;
-      font-size: 0.65rem; cursor: pointer; color: #ffd966;
-      padding: 0 2px; user-select: none;
-    }
-    .player-card .move-arrow:active { color: #fff; }
-    .player-card.show-x .remove-x { display: inline; }
-    .player-card.show-arrows .move-arrow { display: inline; }
+/* 数据面板 */
+#dataPanel { display:none; flex-direction:column; gap:18px; }
+.anim-in { animation:fadeSlide 0.4s ease-out both; }
+@keyframes fadeSlide {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+@keyframes glowPulse {
+  0%,100% { box-shadow:0 0 8px rgba(255,107,53,0.1); }
+  50% { box-shadow:0 0 20px rgba(255,107,53,0.25); }
+}
 
-    .team-container { display: flex; gap: 8px; margin: 10px 0; }
-    .team-box {
-      flex: 1; background: rgba(0,0,0,0.35); backdrop-filter: blur(10px);
-      border-radius: 14px; padding: 8px;
-      border: 1px solid rgba(255,215,0,0.2);
-    }
-    .team-label {
-      font-weight: bold; margin-bottom: 4px; font-size: 0.8rem;
-      display: flex; align-items: center; gap: 4px;
-    }
+/* 数据类型标签 */
+.data-type-tag {
+  display:none;
+  text-align:center;
+  font-size:11px;
+  color:var(--accent);
+  font-weight:700;
+  letter-spacing:2px;
+  padding:6px 0 0;
+  animation:fadeSlide 0.3s ease-out;
+}
 
-    /* 音乐控件 */
-    .bgm-bar {
-      position: fixed; bottom: 10px; left: 10px; right: 10px; z-index: 10000;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none;
-    }
-    .bgm-control {
-      background: rgba(20,25,32,0.95); border: 1px solid rgba(255,215,0,0.3);
-      border-radius: 20px; padding: 8px 16px; color: #ffd58c;
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.8rem; cursor: pointer;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 0 20px rgba(255,140,0,0.3);
-      pointer-events: auto;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .bgm-icon-wrap {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: linear-gradient(135deg, #b48c3a, #ffb347);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; box-shadow: 0 0 10px rgba(255,140,0,0.4);
-    }
-    .bgm-icon-wrap.playing { animation: bgmPulse 2s ease-in-out infinite; }
-    @keyframes bgmPulse {
-      0%,100% { box-shadow: 0 0 8px rgba(255,140,0,0.3); transform: scale(1); }
-      50% { box-shadow: 0 0 18px rgba(255,140,0,0.6); transform: scale(1.06); }
-    }
-    .bgm-eq {
-      display: flex; align-items: flex-end; gap: 2px; height: 16px;
-    }
-    .bgm-eq .bar {
-      width: 2px; border-radius: 1px; background: #ffb347;
-    }
-    .bgm-eq.playing .bar:nth-child(1) { animation: eqAnim 0.8s ease-in-out infinite; }
-    .bgm-eq.playing .bar:nth-child(2) { animation: eqAnim 0.6s ease-in-out 0.15s infinite; }
-    .bgm-eq.playing .bar:nth-child(3) { animation: eqAnim 0.7s ease-in-out 0.3s infinite; }
-    .bgm-eq.playing .bar:nth-child(4) { animation: eqAnim 0.5s ease-in-out 0.1s infinite; }
-    @keyframes eqAnim {
-      0%,100% { height: 5px; }
-      50% { height: 14px; }
-    }
+/* 英雄横幅 */
+.hero-banner {
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:14px;
+  padding:20px 24px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  transition:all 0.3s;
+}
+.hero-banner:hover {
+  border-color:rgba(255,107,53,0.2);
+  box-shadow:0 4px 24px rgba(0,0,0,0.2);
+}
+.hero-avatar {
+  width:52px; height:52px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:800;
+  color:#fff; flex-shrink:0;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 0 16px rgba(255,107,53,0.3);
+}
+.hero-avatar::after {
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),transparent,var(--accent2));
+  z-index:-1;
+  opacity:0.5;
+  animation:glowPulse 3s ease-in-out infinite;
+}
+.hero-avatar img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
+.hero-name { font-size:18px; font-weight:700; }
+.hero-meta { font-size:11px; color:var(--label); margin-top:3px; display:flex; gap:14px; flex-wrap:wrap; }
+.hero-rank-badge {
+  margin-left:auto;
+  flex-shrink:0;
+  background:rgba(255,107,53,0.1);
+  border:1px solid rgba(255,107,53,0.2);
+  border-radius:10px;
+  padding:7px 16px;
+  text-align:center;
+  transition:all 0.3s;
+}
+.hero-rank-badge:hover {
+  background:rgba(255,107,53,0.15);
+  border-color:rgba(255,107,53,0.35);
+  box-shadow:0 0 12px rgba(255,107,53,0.15);
+}
+.hero-rank-badge .rank-label { font-size:9px; color:var(--accent); letter-spacing:1px; font-weight:600; }
+.hero-rank-badge .rank-value { font-size:22px; font-weight:800; color:var(--accent); }
 
-    .signature {
-      text-align: center; padding: 12px 0; font-size: 0.8rem;
-      font-weight: bold; letter-spacing: 2px; margin-top: 6px;
-    }
+/* 核心数据网格 */
+.core-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.core-card {
+  background:rgba(255,255,255,0.035);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;
+  padding:16px 18px;
+  transition:all 0.3s;
+  position:relative;
+  overflow:hidden;
+  cursor:default;
+}
+.core-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.core-card:hover {
+  transform:translateY(-3px);
+  border-color:rgba(255,107,53,0.2);
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);
+}
+.core-card:hover::before { opacity:1; }
+.core-card .card-label { font-size:10px; color:var(--label); letter-spacing:1px; font-weight:600; }
+.core-card .card-value { font-size:28px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+.core-card .card-sub { font-size:10px; color:var(--label); margin-top:2px; }
+.val-kd-gold { color:var(--gold)!important; }
+.val-kd-red { color:var(--red)!important; }
+.val-default { color:var(--value); }
 
-    .modal-overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center; z-index: 10001;
-    }
-    .modal-box {
-      background: #1a0808; border: 2px solid #ff4444;
-      box-shadow: 0 0 40px rgba(255,0,0,0.6); border-radius: 20px;
-      padding: 24px; text-align: center; max-width: 300px; width: 90%;
-    }
-    .modal-title { font-size: 1.4rem; color: #ff4444; font-weight: bold; margin-bottom: 10px; }
-    .modal-text { color: #ffaaaa; margin-bottom: 18px; line-height: 1.5; font-size: 0.9rem; }
-    .modal-btns { display: flex; gap: 10px; justify-content: center; }
-    .modal-btn {
-      padding: 10px 24px; border-radius: 22px; font-weight: bold;
-      cursor: pointer; border: 1px solid; transition: 0.2s; font-size: 0.9rem;
-    }
-    .modal-btn.confirm { background: #ff2222; border-color: #ff6666; color: #fff; }
-    .modal-btn.cancel { background: #2a2a2a; border-color: #555; color: #ccc; }
+/* 标签栏 */
+.tab-bar {
+  display:flex;
+  gap:2px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;
+  padding:3px;
+}
+.tab-btn {
+  flex:1;
+  padding:9px 12px;
+  background:transparent;
+  border:none;
+  border-radius:7px;
+  color:var(--label);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+  position:relative;
+}
+.tab-btn.active {
+  background:linear-gradient(135deg,var(--accent-dim),rgba(255,107,53,0.15));
+  color:var(--accent);
+  font-weight:700;
+}
+.tab-btn:hover:not(.active) { color:#ddd; }
+.tab-select {
+  display:none;
+  width:100%;
+  padding:10px 14px;
+  font-size:16px;
+  font-weight:600;
+  background:rgba(255,255,255,0.04);
+  color:var(--accent);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;
+  outline:none;
+  cursor:pointer;
+  -webkit-appearance:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FF6B35' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+}
 
-    .hidden { display: none !important; }
-    .sync-dot {
-      display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-    }
-    .sync-dot.on { background: #5eff6e; box-shadow: 0 0 5px #5eff6e; }
-    .sync-dot.off { background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+.tab-content { display:none; }
+.tab-content.active { display:block; animation:fadeSlide 0.3s ease-out; }
+.detail-card {
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;
+  padding:18px 20px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  transition:border-color 0.3s;
+}
+.detail-card:hover { border-color:rgba(255,255,255,0.1); }
 
-    .info-text {
-      text-align: center; color: #666; font-size: 0.7rem;
-      padding: 8px 0; line-height: 1.5;
-    }
-  </style>
+/* AI 内容 */
+.ai-content { font-size:15px; line-height:2.2; color:#ccc; }
+.ai-content .ai-title {
+  font-size:19px;
+  font-weight:700;
+  color:var(--accent);
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.ai-content .ai-section { margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.03); }
+.ai-content .ai-section-title {
+  font-size:13px;
+  font-weight:700;
+  color:var(--label);
+  margin-bottom:10px;
+  letter-spacing:1px;
+}
+.ai-content .ai-grade { display:inline-block; font-size:18px; font-weight:800; padding:2px 10px; border-radius:4px; margin:2px 0; }
+.ai-content .grade-s { background:rgba(0,214,143,0.12); color:var(--green); box-shadow:0 0 8px rgba(0,214,143,0.15); }
+.ai-content .grade-a { background:rgba(0,180,216,0.1); color:var(--blue); }
+.ai-content .grade-b { background:rgba(255,179,71,0.1); color:var(--gold); }
+.ai-content .grade-c { background:rgba(255,68,68,0.1); color:var(--red); }
+.ai-content .em { color:var(--accent); font-weight:700; }
+.ai-content .warn { color:var(--gold); }
+.ai-content .good { color:var(--green); }
+.ai-content .bad { color:var(--red); }
+
+/* 武器列表 */
+.weapon-row {
+  display:flex; align-items:center; gap:12px;
+  padding:8px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.02);
+  border-radius:6px;
+  transition:background 0.2s;
+}
+.weapon-row:last-child { border-bottom:none; }
+.weapon-row:hover { background:rgba(255,255,255,0.025); }
+.weapon-icon {
+  width:56px; height:56px;
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:800;
+  background:rgba(255,255,255,0.03);
+  transition:transform 0.2s;
+}
+.weapon-icon:hover { transform:scale(1.05); }
+.weapon-icon img { width:100%; height:100%; image-rendering:pixelated; border-radius:8px; }
+.wpn-ak { background:#c0692e; color:#fff; }
+.wpn-m4 { background:#3e7ec4; color:#fff; }
+.wpn-awp { background:#a8322e; color:#fff; }
+.wpn-deagle { background:#c4a030; color:#000; }
+.wpn-usp { background:#6b7b80; color:#fff; }
+.wpn-glock { background:#7a8688; color:#fff; }
+.wpn-mp5 { background:#556b75; color:#fff; }
+.wpn-smg { background:#5f7078; color:#fff; }
+.wpn-shotgun { background:#6b5044; color:#fff; }
+.wpn-sniper { background:#4a3028; color:#fff; }
+.wpn-mg { background:#3a3a3a; color:#fff; }
+.wpn-default { background:#445058; color:#fff; }
+.weapon-name { flex:1; font-size:14px; font-weight:600; }
+.weapon-kills { font-size:14px; font-weight:700; color:var(--accent); min-width:65px; text-align:right; }
+.weapon-hs { font-size:12px; color:var(--label); min-width:48px; text-align:right; }
+.weapon-bar-wrap { width:80px; height:3px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; flex-shrink:0; }
+.weapon-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; }
+
+/* 时间行 */
+.time-row { display:flex; align-items:center; gap:10px; padding:7px 0; font-size:12px; }
+.time-label { width:65px; color:var(--label); flex-shrink:0; font-weight:500; }
+.time-value { width:70px; font-weight:700; text-align:right; flex-shrink:0; }
+.time-bar-wrap { flex:1; height:14px; background:rgba(255,255,255,0.03); border-radius:7px; overflow:hidden; }
+.time-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,var(--accent),var(--accent2)); opacity:0.55; transition:opacity 0.2s; }
+.time-row:hover .time-bar-fill { opacity:0.8; }
+
+/* KV 网格 */
+.kv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:4px; }
+.kv-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 12px;
+  border-radius:6px;
+  background:rgba(255,255,255,0.015);
+  transition:background 0.2s;
+}
+.kv-row:hover { background:rgba(255,107,53,0.06); }
+.kv-key { font-size:12px; color:var(--label); font-weight:500; }
+.kv-val { font-size:13px; font-weight:600; }
+
+/* 导出 */
+.export-row { text-align:center; padding:4px 0 36px; }
+.btn-export {
+  background:linear-gradient(135deg,var(--accent-dim),rgba(255,107,53,0.12));
+  border:1px solid rgba(255,107,53,0.3);
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  padding:10px 28px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.25s;
+  letter-spacing:1px;
+}
+.btn-export:hover {
+  background:var(--accent-dim);
+  border-color:var(--accent);
+  box-shadow:0 0 16px rgba(255,107,53,0.2);
+  transform:translateY(-1px);
+}
+
+/* 底部 */
+.footer {
+  text-align:center;
+  padding:12px 8px 20px;
+  color:rgba(255,255,255,0.25);
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:1px;
+}
+
+/* 响应式 */
+@media (max-width:768px) {
+  body { padding:10px; }
+  .container { gap:14px; }
+  .header { padding:16px 0 0; }
+  .header h1 { font-size:20px; }
+  .input-row { flex-direction:column; gap:5px; }
+  .input-row button { width:100%; }
+  .input-row .btn-month { width:100%; }
+  .hero-banner { padding:14px 16px; gap:10px; flex-wrap:wrap; }
+  .hero-avatar { width:42px; height:42px; border-radius:10px; font-size:18px; }
+  .hero-name { font-size:16px; }
+  .hero-meta { font-size:10px; gap:8px; }
+  .hero-rank-badge { margin-left:0; width:100%; }
+  .hero-rank-badge .rank-value { font-size:18px; }
+  .core-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .core-card .card-value { font-size:24px; }
+  .tab-bar { display:none; }
+  .tab-select { display:block; }
+  .detail-card { padding:12px 14px; }
+  .kv-grid { grid-template-columns:1fr; }
+  .weapon-bar-wrap { display:none; }
+}
+</style>
 </head>
 <body>
-<div class="main-container">
-  <h1>巨龙传说 · 队内选人</h1>
-  <div class="subtitle">⚔️ 荣耀之战 · 阵容由你定 ⚔️</div>
 
-  <div class="role-switch">
-    <button class="role-btn admin-btn" data-role="admin">🔧</button>
-    <button class="role-btn" data-role="captainA">A队长登入</button>
-    <button class="role-btn" data-role="captainB">B队长登入</button>
+<div class="container">
+  <div class="header">
+    <h1>CS传说 数据分析器</h1>
+    <div class="subtitle">PERSONAL COMBAT ANALYTICS</div>
   </div>
 
-  <div class="status-bar">
-    <span id="statusLabel">⚙️ 等待管理员上传名单...</span>
-    <span class="sync-dot off" id="syncDot" title="同步状态"></span>
+  <div class="input-row">
+    <input type="text" id="userInput" placeholder="输入玩家 ID 或主页链接，如 91524" autocomplete="off">
+    <button id="analyzeBtn"><span>分析</span></button>
+    <button id="monthBtn" class="btn-month">📅 近30天</button>
   </div>
-  <div id="syncLog" style="text-align:center; font-size:0.7rem; color:#888; padding:2px 0 6px; min-height:16px;"></div>
 
-  <!-- 管理员面板 -->
-  <div id="adminPanel" class="hidden">
-    <div class="section-title">🔧 上传名单</div>
-    <textarea id="rawInput" placeholder="粘贴微信接龙后点上传"></textarea>
-    <div style="display:flex; gap:6px; margin-top:6px;">
-      <button class="btn btn-block" id="parseBtn">📤 上传名单</button>
-      <button class="btn btn-small btn-danger" id="adminClearBtn">清空</button>
+  <div id="dataTypeTag" class="data-type-tag"></div>
+
+  <div class="status-box" id="statusBox"></div>
+
+  <div id="emptyState" class="empty-state">
+    <div class="empty-icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="4"/><line x1="32" y1="6" x2="32" y2="18"/><line x1="32" y1="46" x2="32" y2="58"/><line x1="6" y1="32" x2="18" y2="32"/><line x1="46" y1="32" x2="58" y2="32"/></svg></div>
+    <div class="empty-text">输入 ID 开始分析</div>
+  </div>
+
+  <div id="dataPanel">
+    <div class="hero-banner anim-in" id="heroBanner">
+      <div class="hero-avatar" id="heroAvatar"><span id="avatarLetter">?</span></div>
+      <div class="hero-info">
+        <div class="hero-name" id="heroName">--</div>
+        <div class="hero-meta">
+          <span>ID: <b id="heroId">--</b></span>
+          <span>等级: <b id="heroLevel">--</b></span>
+          <span>军衔: <b id="heroRank">--</b></span>
+        </div>
+      </div>
+      <div class="hero-rank-badge">
+        <div class="rank-label">综合评级</div>
+        <div class="rank-value" id="gradeBadge">--</div>
+      </div>
+    </div>
+
+    <div class="core-grid" id="coreGrid">
+      <div class="core-card anim-in" style="animation-delay:0s"><div class="card-label">⚔️ 总击杀</div><div class="card-value val-default" id="coreKills">0</div><div class="card-sub">KILLS</div></div>
+      <div class="core-card anim-in" style="animation-delay:0.08s"><div class="card-label">☠️ 总阵亡</div><div class="card-value val-default" id="coreDeaths">0</div><div class="card-sub">DEATHS</div></div>
+      <div class="core-card anim-in" style="animation-delay:0.16s"><div class="card-label">📊 KD 比</div><div class="card-value val-default" id="coreKD">0</div><div class="card-sub">RATIO</div></div>
+      <div class="core-card anim-in" style="animation-delay:0.24s"><div class="card-label">🏆 胜率</div><div class="card-value val-default" id="coreWinRate">0</div><div class="card-sub">WIN RATE</div></div>
+    </div>
+
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn active" data-tab="tab-ai">AI 综合分析</button>
+      <button class="tab-btn" data-tab="tab-weapons">常用武器</button>
+      <button class="tab-btn" data-tab="tab-combat">战斗详情</button>
+      <button class="tab-btn" data-tab="tab-time">游戏时长</button>
+      <button class="tab-btn" data-tab="tab-honor">荣誉数据</button>
+    </div>
+    <select class="tab-select" id="tabSelect">
+      <option value="tab-ai">AI 综合分析</option>
+      <option value="tab-weapons">常用武器</option>
+      <option value="tab-combat">战斗详情</option>
+      <option value="tab-time">游戏时长</option>
+      <option value="tab-honor">荣誉数据</option>
+    </select>
+
+    <div class="tab-content active" id="tab-ai"><div class="detail-card"><div class="ai-content" id="aiContent"></div></div></div>
+    <div class="tab-content" id="tab-weapons"><div class="detail-card"><div id="weaponList"></div></div></div>
+    <div class="tab-content" id="tab-combat"><div class="detail-card"><div class="kv-grid" id="combatGrid"></div></div></div>
+    <div class="tab-content" id="tab-time"><div class="detail-card"><div id="timeList"></div></div></div>
+    <div class="tab-content" id="tab-honor"><div class="detail-card"><div class="kv-grid" id="honorGrid"></div></div></div>
+
+    <div class="export-row" id="exportRow" style="display:none">
+      <button class="btn-export" id="btnExport">📷 导出为图片</button>
     </div>
   </div>
 
-  <!-- 队长信息 -->
-  <div style="display:flex; gap:10px; margin:8px 0; font-size:0.85rem;">
-    <span id="captainADisplay" style="color:#5eff6e; font-weight:bold; flex:1;">🟢 A: 未选</span>
-    <span id="captainBDisplay" style="color:#ff9f4b; font-weight:bold; flex:1; text-align:right;">🟠 B: 未选</span>
-  </div>
-
-  <!-- 可选池 -->
-  <div class="section-title">🎯 可选名单 <span id="availableCount" style="font-size:0.7rem;color:#888;"></span></div>
-  <div class="player-grid" id="availablePool"></div>
-  <div id="noPlayersMsg" class="info-text">暂无名单，等待管理员上传</div>
-
-  <!-- 两队 -->
-  <div class="team-container">
-    <div class="team-box">
-      <div class="team-label" style="color:#5eff6e;">🟢 A队 <span id="teamACount"></span></div>
-      <div class="player-grid" id="teamAContainer"></div>
-    </div>
-    <div class="team-box">
-      <div class="team-label" style="color:#ff9f4b;">🟠 B队 <span id="teamBCount"></span></div>
-      <div class="player-grid" id="teamBContainer"></div>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:6px; justify-content:center; margin-top:8px;">
-    <button class="btn btn-small" id="undoBtn" title="撤回上一步">↩ 撤回</button>
-    <button class="btn btn-small btn-danger" id="resetBtn">🔄 重置</button>
-    <button class="btn btn-small" id="exportBtn">📋 导出</button>
-  </div>
+  <div class="footer">数据来源 cscspt.com · By: 快到碗里来</div>
 </div>
 
-<div class="signature">
-  <span style="color:#ff6b6b;">快</span><span style="color:#feca57;">到</span><span style="color:#48dbfb;">碗</span><span style="color:#ff9ff3;">里</span><span style="color:#54a0ff;">来</span>
-</div>
-
-<div class="bgm-bar">
-  <div class="bgm-control" id="bgmToggle" title="背景音乐">
-    <div class="bgm-icon-wrap" id="bgmIconWrap">🎵</div>
-    <div class="bgm-eq" id="bgmEq">
-      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-    </div>
-    <span id="bgmLabel" style="font-size:0.75rem;">加载中</span>
-  </div>
-</div>
-
-<audio id="bgm" loop playsinline preload="none"
-  src="bgm.mp3">
-</audio>
-
-<div class="modal-overlay hidden" id="resetModal">
-  <div class="modal-box">
-    <div class="modal-title">⚠️ 危险操作</div>
-    <div class="modal-text">清空所有选人结果<br>回到队长指定阶段</div>
-    <div class="modal-btns">
-      <button class="modal-btn confirm" id="confirmReset">确认</button>
-      <button class="modal-btn cancel" id="cancelReset">取消</button>
-    </div>
-  </div>
+<!-- BGM -->
+<div id="bgmBox" style="position:fixed;top:10px;right:10px;z-index:99;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);border-radius:10px;display:flex;align-items:center;gap:6px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:4px 4px 4px 10px;transition:all 0.3s;">
+  <span style="font-size:11px;color:var(--accent);font-weight:700;">🎵</span>
+  <button id="bgmBtn" style="width:30px;height:30px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;transition:all 0.2s;">▶️</button>
+  <audio id="bgmPlayer" src="https://ys-g.ysepan.com/wap/h315520/BBlWHeb9Q5iEkhF/GkE6A3Cyi9b7fAoGH0g8LNIg6a.D5J/1.mp3" loop crossorigin="anonymous" style="display:none;"></audio>
 </div>
 
 <script>
-// ==================== 配置 ====================
-const SUPABASE_URL = 'https://hcqppynqienvhntleigi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_7wW4thaC8G5MjnEw_Oaawg_A3h8-sOK';
-const ADMIN_PASSWORD = 'admin123';
-const CAPTAIN_A_PASSWORD = '111';
-const CAPTAIN_B_PASSWORD = '222';
+(function() {
+'use strict';
 
-// ==================== 状态 ====================
-let allPlayers = [];
-let captainA = null, captainB = null;
-let teamA = [], teamB = [];
-let currentPicker = null, phase = 'idle';
-let userRole = 'spectator';
-let historyStack = [];  // 撤回历史
+// ==================== 常量 ====================
+const SELECTORS = {
+  BASIC: { nick: '.gt21', avatar: '.gt1 img', infoDD: '.gz dl dd' },
+  STATS: { matches: '.gjf1', faction: '.gjf2 .gjf21', modeTime: '.gjf3 .gjf31' },
+  // 战斗容器：先取容器 div，再在内部 querySelectorAll('dd')
+  TAB_TOTAL: { id: 'con_ri_4', combatDiv: '.gr221', honorDiv: '.gr222.gai', extraDiv: '.grr2.gai1' },
+  TAB_MONTH: { id: 'con_ri_2', combatDiv: '.gr221', honorDiv: '.gr222.gai', extraDiv: '.grr2.gai1' },
+  MVP: { id: 'con_mvp_4' },
+  WEAPONS: { id: 'con_wuqi_4' }
+};
 
-// ==================== 数据同步（fetch 直接调用 REST API）====================
-const API = SUPABASE_URL + '/rest/v1/game_state';
-const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
-let syncOnline = false;
-let lastStateHash = '';
-let pollTimer = null;
-let isSaving = false;
-let lastPollTime = '';
+const FALLBACK = {
+  nick: ['h2','h3','.name','.nickname','.player-name'],
+  avatar: ['.avatar img','.user-face img','.head-img img']
+};
 
-function stateHash() {
-  return JSON.stringify({ allPlayers, captainA, captainB, teamA, teamB, currentPicker, phase });
-}
+// 多个代理服务（按稳定性排序，均无需 API Key）
+const PROXIES = [
+  // 1. allorigins.win — 实测可用
+  { build: url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url), type: 'raw' },
+  // 2. corsproxy.io — 广泛使用的备选
+  { build: url => 'https://corsproxy.io/?' + encodeURIComponent(url), type: 'raw' },
+  // 3. 带 GBK 编码参数的 allorigins
+  { build: url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) + '&charset=GBK', type: 'raw' },
+  // 4. codeTabs CORS proxy
+  { build: url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url), type: 'raw' },
+  // 5. allorigins /get JSON 格式
+  { build: url => 'https://api.allorigins.win/get?url=' + encodeURIComponent(url), type: 'json' },
+];
 
-async function loadStateFromDB() {
-  try {
-    logStatus('⏳ 正在连接数据库...');
-    const res = await fetch(API + '?id=eq.1&select=state', { headers: { 'apikey': SUPABASE_ANON_KEY } });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const arr = await res.json();
-    if (arr?.[0]?.state) {
-      const s = arr[0].state;
-      allPlayers = s.allPlayers || []; captainA = s.captainA || null; captainB = s.captainB || null;
-      teamA = s.teamA || []; teamB = s.teamB || [];
-      currentPicker = s.currentPicker || null; phase = s.phase || 'idle';
-      lastStateHash = stateHash();
-      logStatus('✅ 数据库连接成功' + (allPlayers.length ? '，已加载'+allPlayers.length+'人' : '，名单为空'));
-    } else {
-      logStatus('⚠️ 数据库无数据');
-    }
-  } catch(e) {
-    logStatus('❌ 连接失败: ' + e.message);
-    console.error('loadStateFromDB:', e);
-  }
-}
+const WEAPON_NAMES = {
+  1:'P228',3:'Scout',4:'XM1014',5:'M3',6:'MAC-10',7:'MP5',8:'AUG',9:'SG-552',
+  10:'双持贝雷塔',11:'Five-SeveN',12:'UMP45',13:'SG550',14:'Galil',15:'FAMAS',
+  16:'USP',17:'Glock18',18:'AWP',19:'MP5 Navy',20:'M249',21:'M3 Super',
+  22:'M4A1',23:'TMP',24:'G3SG1',26:'沙漠之鹰',27:'SG552',28:'AK47',29:'匕首',30:'P90'
+};
 
-// ==================== 撤回 ====================
-function pushHistory() {
-  historyStack.push({
-    allPlayers: [...allPlayers],
-    captainA, captainB,
-    teamA: [...teamA], teamB: [...teamB],
-    currentPicker, phase
-  });
-  if (historyStack.length > 30) historyStack.shift();
-}
+const WPN_ABBR = { 28:'AK',22:'M4',18:'AWP',26:'De',16:'USP',17:'G18',19:'MP5',7:'MP5',8:'AUG',27:'SG',14:'Gal',15:'FAM',4:'XM',5:'M3',21:'M3',3:'Sct',24:'G3',20:'M24',30:'P90',23:'TMP',12:'UMP',13:'SG5',1:'P22',10:'El',11:'F7',29:'Kn',6:'M10',9:'SG5' };
+const WPN_CLS = { 28:'wpn-ak',22:'wpn-m4',18:'wpn-awp',26:'wpn-deagle',16:'wpn-usp',17:'wpn-glock',19:'wpn-mp5',7:'wpn-mp5',8:'wpn-smg',27:'wpn-ak',14:'wpn-ak',15:'wpn-m4',4:'wpn-shotgun',5:'wpn-shotgun',21:'wpn-shotgun',3:'wpn-sniper',24:'wpn-sniper',20:'wpn-mg',30:'wpn-smg',23:'wpn-smg',12:'wpn-smg',13:'wpn-sniper',1:'wpn-usp',10:'wpn-usp',11:'wpn-usp',29:'wpn-deagle',6:'wpn-smg',9:'wpn-ak' };
 
-function undo() {
-  if (!historyStack.length) return false;
-  const prev = historyStack.pop();
-  allPlayers = prev.allPlayers; captainA = prev.captainA; captainB = prev.captainB;
-  teamA = prev.teamA; teamB = prev.teamB;
-  currentPicker = prev.currentPicker; phase = prev.phase;
-  return true;
-}
-
-async function saveStateToDB() {
-  isSaving = true;
-  const state = { allPlayers, captainA, captainB, teamA, teamB, currentPicker, phase };
-  try {
-    const res = await fetch(API + '?id=eq.1', {
-      method: 'PATCH',
-      headers: HEADERS,
-      body: JSON.stringify({ state, updated_at: new Date().toISOString() })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    lastStateHash = stateHash();
-    if (!syncOnline) { syncOnline = true; updateSyncDot(true); }
-    logStatus('📤 数据已保存');
-  } catch(e) {
-    logStatus('❌ 保存失败: ' + e.message);
-    syncOnline = false; updateSyncDot(false);
-    console.error('saveStateToDB:', e);
-  }
-  setTimeout(() => { isSaving = false; }, 500);
-}
-
-function startPolling() {
-  logStatus('🔄 启动轮询中...');
-  let pollCount = 0;
-  pollTimer = setInterval(async () => {
-    if (isSaving) return;
-    pollCount++;
-    try {
-      const res = await fetch(API + '?id=eq.1&select=state', { headers: { 'apikey': SUPABASE_ANON_KEY } });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const arr = await res.json();
-      if (arr?.[0]?.state) {
-        const remoteHash = JSON.stringify(arr[0].state);
-        if (remoteHash !== lastStateHash) {
-          const s = arr[0].state;
-          allPlayers = s.allPlayers || []; captainA = s.captainA || null; captainB = s.captainB || null;
-          teamA = s.teamA || []; teamB = s.teamB || [];
-          currentPicker = s.currentPicker || null; phase = s.phase || 'idle';
-          lastStateHash = remoteHash;
-          render();
-          logStatus('🔄 检测到更新，已同步 (轮询#'+pollCount+')');
-        }
-        if (!syncOnline) { syncOnline = true; updateSyncDot(true); }
-      }
-      lastPollTime = new Date().toLocaleTimeString();
-    } catch(e) {
-      if (syncOnline) { syncOnline = false; updateSyncDot(false); }
-      logStatus('⚠️ 轮询失败: ' + e.message + ' ('+lastPollTime+')');
-    }
-  }, 1500);
-  syncOnline = true;
-  updateSyncDot(true);
-  logStatus('🔄 轮询已启动 (每1.5秒)');
-}
-
-function logStatus(msg) {
-  console.log('[同步]', msg);
-  // 同时在页面上显示最后一条日志
-  const el = document.getElementById('syncLog');
-  if (el) el.textContent = msg;
-}
+const CACHE_TTL = 5 * 60 * 1000;
+// 页面选项卡：日(1) / 月(2) / 年(3) / 总(4)
+const MONTH_TAB_IDS = ['con_ri_2'];
+const MONTH_WEAPONS_TAB = 'con_wuqi_2';
+const MONTH_MVP_TAB = 'con_mvp_2';
 
 // ==================== DOM ====================
 const $ = id => document.getElementById(id);
-const statusLabel = $('statusLabel');
-const availablePool = $('availablePool');
-const teamAContainer = $('teamAContainer'), teamBContainer = $('teamBContainer');
-const captainADisplay = $('captainADisplay'), captainBDisplay = $('captainBDisplay');
-const availableCount = $('availableCount'), teamACount = $('teamACount'), teamBCount = $('teamBCount');
-const rawInput = $('rawInput'), syncDot = $('syncDot'), adminPanel = $('adminPanel');
-const noPlayersMsg = $('noPlayersMsg');
-
-// ==================== BGM（点击按钮播放/暂停）====================
-const bgm = $('bgm'), bgmToggle = $('bgmToggle');
-const bgmIconWrap = $('bgmIconWrap'), bgmEq = $('bgmEq'), bgmLabel = $('bgmLabel');
-let bgmPlaying = false;
-
-function updateBgmUI() {
-  if (bgmPlaying) {
-    bgmIconWrap.classList.add('playing'); bgmEq.classList.add('playing');
-    bgmIconWrap.textContent = '🎵'; bgmLabel.textContent = '播放中';
-  } else {
-    bgmIconWrap.classList.remove('playing'); bgmEq.classList.remove('playing');
-    bgmIconWrap.textContent = '🎵'; bgmLabel.textContent = '点击播放';
-  }
-}
-
-// 点击音乐按钮直接播放/暂停（用户手势保证手机浏览器接受）
-bgmToggle.addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (bgm.paused) {
-    bgm.play().then(() => { bgmPlaying = true; updateBgmUI(); })
-      .catch(() => { bgmLabel.textContent = '播放失败'; });
-  } else {
-    bgm.pause();
-    bgmPlaying = false;
-    updateBgmUI();
-  }
-});
-
-bgm.addEventListener('play',  () => { bgmPlaying = true;  updateBgmUI(); });
-bgm.addEventListener('pause', () => { bgmPlaying = false; updateBgmUI(); });
-bgm.addEventListener('error', () => { bgmPlaying = false; updateBgmUI(); bgmLabel.textContent = '加载失败'; });
-
-updateBgmUI();
-
-// ==================== 身份切换 ====================
-document.querySelectorAll('.role-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    try {
-      const role = btn.dataset.role;
-      if (role === 'admin') {
-        const pwd = prompt('管理员密码：');
-        if (pwd === null) return;
-        if (pwd !== ADMIN_PASSWORD) { alert('密码错误'); return; }
-      } else if (role === 'captainA' || role === 'captainB') {
-        const label = role === 'captainA' ? '队长A' : '队长B';
-        const pwd = prompt(label + '密码：');
-        if (pwd === null) return;
-        if (pwd !== (role === 'captainA' ? CAPTAIN_A_PASSWORD : CAPTAIN_B_PASSWORD)) { alert('密码错误'); return; }
-      }
-      userRole = role;
-      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      if (adminPanel) adminPanel.classList.toggle('hidden', userRole !== 'admin');
-      const rb = $('resetBtn'); if (rb) rb.classList.toggle('hidden', userRole === 'spectator');
-      const ub = $('undoBtn'); if (ub) ub.classList.toggle('hidden', userRole === 'spectator');
-      render();
-    } catch(e) { console.error(e); alert('操作失败，请刷新'); }
-  });
-});
-
-// ==================== 解析名单 ====================
-function parseList(raw) {
-  const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  const players = [];
-  for (let line of lines) {
-    let c = line.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'').trim();
-    if (!c) continue;
-    if (/^#/.test(c)) continue;
-    if (/^(报名|接龙|替补|候补|注意事项|规则|周三|周四|周五|周六|周日|周一|周二|明天|今天|昨天|各位|大家好|兄弟们)/.test(c)) continue;
-    const m = c.match(/^(\d+)\s*[\.\、\．\,\)\）]\s*(.+)$/);
-    if (!m) continue;
-    let name = m[2].trim();
-    if (!name) continue;
-    name = name.replace(/[\.\。]+$/,'').trim(); if (!name) continue;
-    name = name.replace(/[\s\(（]*替补[\)）]?\s*$/g,'').trim(); if (!name) continue;
-    name = name.replace(/\s{2,}.*$/,'').trim(); if (!name) continue;
-    name = name.replace(/[\s]+(?:早的话|不一定|尽量|可能|应该|看情况|再说|有空|下次|晚点|晚些|暂定|待定|也许|或许|差不多|争取|不确定|到时候).*$/i,'').trim();
-    if (!name) continue;
-    if (name.includes('*')) name = name.split('*').pop().trim();
-    if (!name) continue;
-    if (name.length < 2 && !/[一-鿿]/.test(name)) continue;
-    if (!players.includes(name)) players.push(name);
-  }
-  // 排序：名字末尾有数字的按数字从高到低排前面，无数字的保持原顺序
-  const withNum = [], withoutNum = [];
-  players.forEach(p => {
-    const m = p.match(/(\d+)$/);
-    if (m) withNum.push({ name: p, num: parseInt(m[1]) });
-    else withoutNum.push(p);
-  });
-  withNum.sort((a, b) => b.num - a.num);
-  return [...withNum.map(x => x.name), ...withoutNum];
-}
-
-$('parseBtn').addEventListener('click', async () => {
-  if (userRole !== 'admin') { alert('仅管理员'); return; }
-  const raw = rawInput.value;
-  if (!raw.trim()) { alert('请先粘贴微信接龙'); return; }
-  const players = parseList(raw);
-  if (players.length < 2) { alert('解析失败，仅' + players.length + '人。格式：1. 昵称'); return; }
-  pushHistory();
-  allPlayers = players; captainA = null; captainB = null;
-  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
-  render(); await saveStateToDB();
-  statusLabel.textContent = '✅ 已上传 ' + players.length + ' 名玩家';
-});
-
-$('adminClearBtn').addEventListener('click', async () => {
-  if (userRole !== 'admin') return;
-  if (!confirm('确认清空？')) return;
-  pushHistory();
-  allPlayers = []; captainA = null; captainB = null;
-  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
-  render(); await saveStateToDB();
-});
-
-// ==================== 选人 ====================
-function handlePick(player) {
-  if (userRole === 'spectator') return;
-  pushHistory();
-  const sel = [...teamA, ...teamB];
-
-  if (phase === 'idle') {
-    if (userRole === 'captainA') {
-      if (captainB === player) { alert('已是队长B'); return; }
-      if (sel.includes(player) && player !== captainA) { alert('已被选走'); return; }
-      if (captainA === player) { captainA = null; teamA = teamA.filter(p=>p!==player); }
-      else {
-        if (captainA) teamA = teamA.filter(p=>p!==captainA);
-        captainA = player; if (!teamA.includes(player)) teamA.push(player);
-      }
-      if (captainA && captainB) { phase = 'pick'; currentPicker = 'A'; }
-      render(); saveStateToDB(); return;
-    }
-    if (userRole === 'captainB') {
-      if (captainA === player) { alert('已是队长A'); return; }
-      if (sel.includes(player) && player !== captainB) { alert('已被选走'); return; }
-      if (captainB === player) { captainB = null; teamB = teamB.filter(p=>p!==player); }
-      else {
-        if (captainB) teamB = teamB.filter(p=>p!==captainB);
-        captainB = player; if (!teamB.includes(player)) teamB.push(player);
-      }
-      if (captainA && captainB) { phase = 'pick'; currentPicker = 'A'; }
-      render(); saveStateToDB(); return;
-    }
-  }
-
-  if (phase === 'pick') {
-    if (userRole === 'captainA' && currentPicker !== 'A') { alert('还没轮到你'); return; }
-    if (userRole === 'captainB' && currentPicker !== 'B') { alert('还没轮到你'); return; }
-    if (sel.includes(player)) { alert('已被选走'); return; }
-    if (player === captainA || player === captainB) { alert('队长已在队中'); return; }
-    if (!confirm('选「' + player + '」加入' + (currentPicker==='A'?'A队':'B队') + '？')) return;
-    if (currentPicker === 'A') teamA.push(player); else teamB.push(player);
-    const rem = allPlayers.filter(p => ![...teamA, ...teamB].includes(p));
-    if (rem.length === 0) { phase = 'done'; currentPicker = null; }
-    else currentPicker = currentPicker === 'A' ? 'B' : 'A';
-    render(); saveStateToDB();
-  }
-}
-
-// ==================== 排序（上下箭头按钮）====================
-function movePlayer(name, dir) {
-  pushHistory();
-  const sel = [...teamA, ...teamB];
-  const available = allPlayers.filter(p => !sel.includes(p));
-  const idx = available.indexOf(name);
-  if (idx < 0) return;
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= available.length) return;
-  // 交换
-  [available[idx], available[newIdx]] = [available[newIdx], available[idx]];
-  // 重建 allPlayers
-  const selectedSet = new Set(sel);
-  const newAll = [];
-  let availIdx = 0;
-  for (const p of allPlayers) {
-    if (selectedSet.has(p)) { newAll.push(p); }
-    else { newAll.push(available[availIdx++]); }
-  }
-  allPlayers = newAll;
-  render();
-  saveStateToDB();
-}
-
-// ==================== 渲染（手机版：只显示可选池+队伍）====================
-function render() {
-  const sel = [...teamA, ...teamB];
-  const available = allPlayers.filter(p => !sel.includes(p));
-
-  // 状态栏
-  if (allPlayers.length === 0) {
-    statusLabel.textContent = '⚙️ 等待管理员上传名单...';
-  } else if (phase === 'idle') {
-    if (!captainA && !captainB) statusLabel.textContent = '⚙️ 等待队长指定...';
-    else if (!captainA) statusLabel.textContent = '⚙️ 等待队长A...';
-    else if (!captainB) statusLabel.textContent = '⚙️ 等待队长B...';
-    else statusLabel.textContent = '🎯 A队先选！';
-  } else if (phase === 'pick') {
-    statusLabel.textContent = '🎯 ' + (currentPicker==='A'?'队长A':'队长B') + ' 选人中（剩'+available.length+'人）';
-  } else if (phase === 'done') {
-    statusLabel.textContent = '✅ 完成！A队'+teamA.length+'人 B队'+teamB.length+'人';
-  }
-  updateSyncDot(syncOnline);
-
-  // 队长
-  captainADisplay.textContent = '🟢 A: ' + (captainA || '未选');
-  captainBDisplay.textContent = '🟠 B: ' + (captainB || '未选');
-
-  // 可选池（排序箭头 + 管理员删除按钮）
-  const canEdit = userRole !== 'spectator';
-  const isAdmin = userRole === 'admin';
-  availableCount.textContent = available.length ? '('+available.length+'人)' : '';
-  availablePool.innerHTML = available.map((p, i) => {
-    let cls = 'player-card';
-    if (isAdmin) cls += ' show-x';
-    if (isAdmin) cls += ' show-arrows';
-    let btns = '';
-    if (isAdmin) {
-      btns += '<span class="move-arrow" data-move="'+esc(p)+'" data-dir="-1" title="上移">▲</span>';
-      btns += '<span class="move-arrow" data-move="'+esc(p)+'" data-dir="1" title="下移">▼</span>';
-    }
-    if (isAdmin) {
-      btns += '<span class="remove-x" data-del="'+esc(p)+'" title="从名单删除">✕</span>';
-    }
-    return '<span class="'+cls+'" data-player="'+esc(p)+'"><span class="rainbow-name">'+p+'</span> '+btns+'</span>';
-  }).join('');
-  noPlayersMsg.classList.toggle('hidden', allPlayers.length > 0);
-
-  // 队伍（显示删除按钮）
-  const sortT = (t, cap) => {
-    const r = t.filter(p=>p!==cap);
-    return (cap && t.includes(cap)) ? [cap, ...r] : t;
-  };
-  const makeTeamCard = (p, team, cap) => {
-    const isCap = p === cap;
-    const cls = 'team-' + (team === 'A' ? 'a' : 'b');
-    let html = '<span class="player-card ' + cls + (isCap ? ' captain' : '') + ' no-click';
-    if (canEdit) html += ' show-x';
-    html += '">' + p + (isCap ? ' 👑' : '');
-    if (canEdit) html += '<span class="remove-x" data-remove="'+esc(p)+'" data-team="'+team+'" title="移除"> ✕</span>';
-    html += '</span>';
-    return html;
-  };
-  const dA = sortT(teamA, captainA), dB = sortT(teamB, captainB);
-  teamAContainer.innerHTML = dA.map(p => makeTeamCard(p, 'A', captainA)).join('');
-  teamBContainer.innerHTML = dB.map(p => makeTeamCard(p, 'B', captainB)).join('');
-  teamACount.textContent = teamA.length ? teamA.length+'人' : '';
-  teamBCount.textContent = teamB.length ? teamB.length+'人' : '';
-
-  // 事件：点击选人 + 排序箭头 + 删除队员
-  availablePool.querySelectorAll('.player-card').forEach(card => {
-    card.addEventListener('click', () => handlePick(card.dataset.player));
-  });
-  // 排序箭头
-  document.querySelectorAll('.move-arrow').forEach(arrow => {
-    arrow.addEventListener('click', (e) => {
-      e.stopPropagation();
-      movePlayer(arrow.dataset.move, parseInt(arrow.dataset.dir));
-    });
-  });
-  // 删除队员按钮
-  document.querySelectorAll('.remove-x[data-remove]').forEach(x => {
-    x.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const player = x.dataset.remove;
-      const team = x.dataset.team;
-      if (confirm('将「' + player + '」移出队伍？')) removePlayer(player, team);
-    });
-  });
-  // 从名单中彻底删除（仅管理员）
-  document.querySelectorAll('.remove-x[data-del]').forEach(x => {
-    x.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const player = x.dataset.del;
-      if (!confirm('将「' + player + '」从名单中彻底移除？')) return;
-      pushHistory();
-      // 从队伍中移除
-      teamA = teamA.filter(p => p !== player);
-      teamB = teamB.filter(p => p !== player);
-      if (captainA === player) captainA = null;
-      if (captainB === player) captainB = null;
-      // 从名单移除
-      allPlayers = allPlayers.filter(p => p !== player);
-      // 检查选人是否完成
-      if (phase === 'done') {
-        phase = 'pick';
-        currentPicker = (teamA.length <= teamB.length) ? 'A' : 'B';
-      }
-      // 如果队长被删，回到idle
-      if (!captainA || !captainB) {
-        if (phase === 'pick' && (!captainA || !captainB)) phase = 'idle';
-        currentPicker = null;
-      }
-      render(); saveStateToDB();
-    });
-  });
-}
-
-// ==================== 撤回 & 重置 & 导出 ====================
-$('undoBtn').addEventListener('click', () => {
-  if (userRole === 'spectator') { alert('仅队长/管理员可撤回'); return; }
-  if (!historyStack.length) { alert('没有可撤回的操作'); return; }
-  if (!undo()) { alert('撤回失败'); return; }
-  render(); saveStateToDB();
-  logStatus('↩ 已撤回上一步');
-});
-
-// 删除队员（从队伍中移除）
-function removePlayer(player, team) {
-  if (userRole === 'spectator') return;
-  pushHistory();
-  if (phase === 'idle') {
-    // 队长指定阶段：取消队长
-    if (player === captainA) { captainA = null; teamA = teamA.filter(p => p !== player); }
-    if (player === captainB) { captainB = null; teamB = teamB.filter(p => p !== player); }
-  } else {
-    if (team === 'A') teamA = teamA.filter(p => p !== player);
-    else teamB = teamB.filter(p => p !== player);
-    // 如果队长被移除但仍是队长身份，保留队长身份
-    if (player === captainA && !teamA.includes(captainA)) { /* captainA stays set */ }
-    if (player === captainB && !teamB.includes(captainB)) { /* captainB stays set */ }
-    // 检查是否要回退阶段
-    if (phase === 'done') {
-      phase = 'pick';
-      currentPicker = (teamA.length <= teamB.length) ? 'A' : 'B';
-    }
-  }
-  render(); saveStateToDB();
-}
-
-$('resetBtn').addEventListener('click', () => {
-  if (userRole === 'spectator') { alert('仅队长/管理员可重置'); return; }
-  $('resetModal').classList.remove('hidden');
-});
-$('cancelReset').addEventListener('click', () => $('resetModal').classList.add('hidden'));
-$('resetModal').addEventListener('click', e => { if (e.target === $('resetModal')) $('resetModal').classList.add('hidden'); });
-$('confirmReset').addEventListener('click', async () => {
-  $('resetModal').classList.add('hidden');
-  pushHistory();
-  captainA = null; captainB = null;
-  teamA = []; teamB = []; currentPicker = null; phase = 'idle';
-  render(); await saveStateToDB();
-});
-
-$('exportBtn').addEventListener('click', () => {
-  if (!allPlayers.length) { alert('无数据'); return; }
-  const sortT = (t, cap) => {
-    const r = t.filter(p=>p!==cap);
-    return (cap && t.includes(cap)) ? [cap, ...r] : t;
-  };
-  const text = '🟢 A队('+teamA.length+'): '+sortT(teamA,captainA).join('、')+'\n\n🟠 B队('+teamB.length+'): '+sortT(teamB,captainB).join('、')+'\n\n📅 '+new Date().toLocaleString();
-  navigator.clipboard.writeText(text).then(()=>alert('已复制！')).catch(()=>prompt('复制：',text));
-});
+const input = $('userInput');
+const btn = $('analyzeBtn');
+const monthBtn = $('monthBtn');
+const statusBox = $('statusBox');
+const emptyState = $('emptyState');
+const dataPanel = $('dataPanel');
+const exportRow = $('exportRow');
+const dataTypeTag = $('dataTypeTag');
 
 // ==================== 工具 ====================
-function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function updateSyncDot(on) { if(syncDot){ syncDot.className = 'sync-dot '+(on?'on':'off'); syncDot.title = on?'已同步':'未连接'; } }
+function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+const num = s => { const n = parseFloat(String(s).replace(/[,，%]/g,'')); return isNaN(n)?null:n; };
 
-// ==================== 启动 ====================
-async function boot() {
-  render();
-  statusLabel.textContent = '⏳ 连接中...';
-
-  await loadStateFromDB();
-  render();
-  startPolling();
-
-  if (allPlayers.length) statusLabel.textContent = '✅ 已同步 '+allPlayers.length+' 人';
-  else statusLabel.textContent = '⚙️ 等待管理员上传名单...';
+function extractId(raw) {
+  const m = raw.match(/\/user_id\/(\d+)/);
+  return m ? m[1] : raw.trim().replace(/\D/g,'');
 }
-boot();
+
+function safeQ(doc, sel, fallback) {
+  let el = doc.querySelector(sel);
+  if (!el && fallback) {
+    for (const fb of (Array.isArray(fallback)?fallback:[fallback])) {
+      el = doc.querySelector(fb);
+      if (el) break;
+    }
+  }
+  return el;
+}
+
+// ==================== 缓存 ====================
+function getCached(id) {
+  try {
+    const raw = sessionStorage.getItem('cs_'+id);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (Date.now() - entry.ts > CACHE_TTL) { sessionStorage.removeItem('cs_'+id); return null; }
+    return entry.data;
+  } catch(e) { return null; }
+}
+function setCached(id, data) {
+  try { sessionStorage.setItem('cs_'+id, JSON.stringify({ ts:Date.now(), data })); } catch(e) {}
+}
+
+// ==================== 网络 ====================
+// 解码 HTML（支持 GBK 和 UTF-8）
+function decodeHtml(buf) {
+  // 优先尝试 GBK（cscspt.com 使用的编码），然后 UTF-8
+  try { const r = new TextDecoder('gbk').decode(buf); if (r && r.length > 100) return r; } catch(e) {}
+  try { const r = new TextDecoder('gb18030').decode(buf); if (r && r.length > 100) return r; } catch(e) {}
+  try { const r = new TextDecoder('utf-8').decode(buf); if (r && r.length > 100) return r; } catch(e) {}
+  // 最后尝试从头部检测编码
+  try {
+    const r = new TextDecoder('gbk').decode(buf);
+    if (r && r.length > 10) return r;
+  } catch(e) {}
+  return null;
+}
+
+// 请求头（模拟真实浏览器）
+const FETCH_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+};
+
+// 获取 HTML（自动处理编码）
+async function fetchHtml(url) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, headers: FETCH_HEADERS, credentials: 'omit' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    return decodeHtml(buf);
+  } finally { clearTimeout(t); }
+}
+
+// 获取 JSON 格式的代理响应（用于 allorigins /get 等）
+async function fetchJsonProxy(proxyUrl) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const res = await fetch(proxyUrl, { signal: ctrl.signal, headers: FETCH_HEADERS });
+    if (!res.ok) return null;
+    const json = await res.json();
+    // allorigins /get 可返回 { contents: "..." }
+    if (json && json.contents && typeof json.contents === 'string') {
+      if (json.contents.length > 80 && /<[a-z]+/i.test(json.contents)) return json.contents;
+      if (json.status && json.status.http_code === 200 && json.contents.length > 10) return json.contents;
+    }
+    // everyorigin 等其他格式
+    if (json && typeof json.contents === 'string' && json.contents.length > 80) return json.contents;
+    return null;
+  } catch(e) { return null; }
+  finally { clearTimeout(t); }
+}
+
+async function fetchWithFallbacks(pageUrl) {
+  // 1. 尝试直连（可能 CORS 失败）
+  try {
+    const h = await fetchHtml(pageUrl);
+    if (h && h.length > 100) return h;
+  } catch(e) {}
+
+  // 2. 尝试所有代理
+  for (let i = 0; i < PROXIES.length; i++) {
+    const proxy = PROXIES[i];
+    try {
+      const proxyUrl = proxy.build(pageUrl);
+      let h;
+      if (proxy.type === 'json') {
+        h = await fetchJsonProxy(proxyUrl);
+      } else {
+        h = await fetchHtml(proxyUrl);
+      }
+      if (h && h.length > 100) {
+        console.log('[CS] 代理 #' + (i+1) + ' 成功, 内容长度:', h.length);
+        return h;
+      }
+      console.log('[CS] 代理 #' + (i+1) + ' 返回内容过短:', h ? h.length : 0);
+    } catch(e) {
+      console.log('[CS] 代理 #' + (i+1) + ' 失败:', e.message);
+    }
+  }
+  return null;
+}
+
+async function fetchImageAsDataUrl(imageUrl) {
+  const rawProxies = PROXIES.filter(p => p.type === 'raw');
+  for (const proxy of rawProxies) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(proxy.build(imageUrl), { signal: ctrl.signal });
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (blob.size < 100) continue;
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch(e) { continue; }
+    finally { clearTimeout(t); }
+  }
+  return null;
+}
+
+// ==================== 解析 ====================
+function parseBasicInfo(doc) {
+  const data = {};
+  const nickEl = safeQ(doc, SELECTORS.BASIC.nick, FALLBACK.nick);
+  data.nickname = nickEl ? nickEl.textContent.trim() : '--';
+
+  const avatarImg = safeQ(doc, SELECTORS.BASIC.avatar, FALLBACK.avatar);
+  if (avatarImg) {
+    let src = avatarImg.getAttribute('src')||'';
+    if (src.startsWith('/')) src = 'https://www.cscspt.com'+src;
+    data.avatar = src;
+  } else { data.avatar = null; }
+
+  const kv = {};
+  doc.querySelectorAll(SELECTORS.BASIC.infoDD).forEach(dd => {
+    const sp = dd.querySelector('span'), iv = dd.querySelector('i');
+    if (sp&&iv) kv[sp.textContent.trim().replace(/[：:]\s*$/,'')] = iv.textContent.trim();
+  });
+  data.level = kv['平台等级']||'--';
+  data.rank = kv['军衔等级']||'--';
+  data.status = kv['账号状态']||'--';
+  data.lastLogin = kv['最近登录']||'--';
+  data.region = kv['玩家地区']||'--';
+  data.ipRegion = kv['最后IP属地']||'--';
+  return data;
+}
+
+function parseStats(doc) {
+  const data = {};
+  const gjf1 = doc.querySelector(SELECTORS.STATS.matches);
+  if (gjf1) { const i = gjf1.querySelector('i'); if (i) data.totalMatches = i.textContent.trim(); }
+
+  doc.querySelectorAll(SELECTORS.STATS.faction).forEach(el => {
+    const t = el.textContent.trim();
+    const tr = t.match(/土匪[：:]?\s*(\d+)/), ct = t.match(/警察[：:]?\s*(\d+)/);
+    if (tr) data.tRounds = tr[1]; if (ct) data.ctRounds = ct[1];
+  });
+
+  doc.querySelectorAll(SELECTORS.STATS.modeTime).forEach(el => {
+    const t = el.textContent.trim();
+    const wm = t.match(/胜利局数[：:]?\s*(\d+)/), rm = t.match(/胜率[：:]?\s*(\d+%)/);
+    if (wm) data.wins = wm[1]; if (rm) data.winRate = rm[1];
+    const hm = t.match(/(\d+)\s*小时/);
+    if (t.includes('混战模式时间')&&hm) data.hunzhanTime=hm[1]+'小时';
+    if (t.includes('重生模式时间')&&hm) data.respawnTime=hm[1]+'小时';
+    if (t.includes('跳跃模式时间')&&hm) data.jumpTime=hm[1]+'小时';
+    if (t.includes('休闲模式时间')&&hm) data.casualTime=hm[1]+'小时';
+    if (t.includes('所有模式总时')&&hm) data.totalTime=hm[1]+'小时';
+  });
+  return data;
+}
+
+/**
+ * 从指定 tab 容器中解析战斗/荣誉数据
+ * @param {Document} doc
+ * @param {string} tabId - tab 容器 ID
+ * @param {object} tabSelector - 选择器配置，含 combatDiv, honorDiv, extraDiv
+ */
+function parseTabDataFrom(doc, tabId, tabSelector) {
+  const data = {};
+  const totalTab = doc.getElementById(tabId);
+  if (!totalTab) return data;
+
+  // 战斗数据：先取容器 div，再查内部 dd
+  const gr221 = totalTab.querySelector(tabSelector.combatDiv);
+  if (gr221) gr221.querySelectorAll('dd').forEach(dd => {
+    const sp = dd.querySelector('span'), iv = dd.querySelector('i');
+    if (!sp||!iv) return;
+    const k = sp.textContent.trim().replace(/[：:]\s*$/,''), v = iv.textContent.trim();
+    if (k==='杀敌') data.kills=v;
+    else if (k==='阵亡') data.deaths=v;
+    else if (k==='KD') data.kd=v;
+    else if (k==='爆头率') data.headshots=v;
+    else if (k.includes('平均伤害')||k==='AD') data.ad=v;
+    else if (k.includes('平均存活')) data.avgSurvive=v;
+  });
+
+  // 荣誉数据
+  const gr222 = totalTab.querySelector(tabSelector.honorDiv);
+  if (gr222) {
+    const lbs = ['mvpCount','c4Plant','c4Defuse','accidents'];
+    gr222.querySelectorAll('dd').forEach((dd,i) => { if (lbs[i]) data[lbs[i]] = dd.textContent.trim(); });
+  }
+
+  // 额外数据
+  const grr2 = totalTab.querySelector(tabSelector.extraDiv);
+  if (grr2) grr2.querySelectorAll('dd').forEach(dd => {
+    const sp = dd.querySelector('span'), iv = dd.querySelector('i');
+    if (!sp||!iv) return;
+    const k = sp.textContent.trim().replace(/[：:]\s*$/,''), v = iv.textContent.trim();
+    if (k.includes('日最高杀敌1')) data.dailyTopKill1=v;
+    else if (k.includes('日最高杀敌2')) data.dailyTopKill2=v;
+    else if (k.includes('日最高杀敌3')) data.dailyTopKill3=v;
+    else if (k.includes('一箭双雕')) data.doubleKill=v;
+  });
+  return data;
+}
+
+function parseTabData(doc) {
+  return parseTabDataFrom(doc, SELECTORS.TAB_TOTAL.id, SELECTORS.TAB_TOTAL);
+}
+
+function parseMonthTabData(doc) {
+  // 依次尝试多个可能的月 tab ID
+  for (const id of MONTH_TAB_IDS) {
+    const data = parseTabDataFrom(doc, id, SELECTORS.TAB_MONTH);
+    if (data.kills || data.deaths) return data;
+  }
+  return {};
+}
+
+function parseMVP(doc) {
+  const data = {}, mvpTab = doc.getElementById(SELECTORS.MVP.id);
+  if (!mvpTab) return data;
+  mvpTab.querySelectorAll('dd').forEach(dd => {
+    const sp = dd.querySelector('span'), img = dd.querySelector('img');
+    if (sp&&img) {
+      const src = img.getAttribute('src')||'', v = sp.textContent.trim();
+      if (src.includes('031_03')) data.mvpGold=v;
+      else if (src.includes('031_06')) data.mvpSilver=v;
+      else if (src.includes('031_09')) data.mvpBronze=v;
+    }
+  });
+  return data;
+}
+
+function parseWeapons(doc) {
+  const weapons = [], wpTab = doc.getElementById(SELECTORS.WEAPONS.id);
+  if (!wpTab) return weapons;
+  wpTab.querySelectorAll('dl>dd').forEach(dd => {
+    const img = dd.querySelector('em img'), sp = dd.querySelector('span'), hsEl = dd.querySelector('i');
+    if (img&&sp&&hsEl) {
+      const src = img.getAttribute('src')||'', wpId = (src.match(/wpn_(\d+)/)||[])[1];
+      const kills = parseInt(sp.textContent.trim(),10)||0;
+      if (wpId&&kills>0) weapons.push({ id:parseInt(wpId,10), kills, hsRate:hsEl.textContent.trim(), icon:src });
+    }
+  });
+  weapons.sort((a,b)=>b.kills-a.kills);
+  return weapons;
+}
+
+function parsePlayerData(html, id) {
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  return Object.assign(
+    { id, nickname:'--' },
+    parseBasicInfo(doc),
+    parseStats(doc),
+    parseTabData(doc),
+    parseMVP(doc),
+    { weapons: parseWeapons(doc) }
+  );
+}
+
+function parseMonthWeapons(doc) {
+  const weapons = [], wpTab = doc.getElementById(MONTH_WEAPONS_TAB);
+  if (!wpTab) return weapons;
+  wpTab.querySelectorAll('dl>dd').forEach(dd => {
+    const img = dd.querySelector('em img'), sp = dd.querySelector('span'), hsEl = dd.querySelector('i');
+    if (img&&sp&&hsEl) {
+      const src = img.getAttribute('src')||'', wpId = (src.match(/wpn_(\d+)/)||[])[1];
+      const kills = parseInt(sp.textContent.trim(),10)||0;
+      if (wpId&&kills>0) weapons.push({ id:parseInt(wpId,10), kills, hsRate:hsEl.textContent.trim(), icon:src });
+    }
+  });
+  weapons.sort((a,b)=>b.kills-a.kills);
+  return weapons;
+}
+
+function parseMonthMVP(doc) {
+  const data = {}, mvpTab = doc.getElementById(MONTH_MVP_TAB);
+  if (!mvpTab) return data;
+  mvpTab.querySelectorAll('dd').forEach(dd => {
+    const sp = dd.querySelector('span'), img = dd.querySelector('img');
+    if (sp&&img) {
+      const src = img.getAttribute('src')||'', v = sp.textContent.trim();
+      if (src.includes('031_03')) data.mvpGold=v;
+      else if (src.includes('031_06')) data.mvpSilver=v;
+      else if (src.includes('031_09')) data.mvpBronze=v;
+    }
+  });
+  return data;
+}
+
+function parsePlayerMonthData(html, id) {
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  const monthData = parseMonthTabData(doc);
+  if (!monthData.kills && !monthData.deaths) {
+    Object.assign(monthData, parseTabData(doc));
+  }
+  return Object.assign(
+    { id, nickname:'--' },
+    parseBasicInfo(doc),
+    parseStats(doc),
+    monthData,
+    parseMonthMVP(doc),
+    { weapons: parseMonthWeapons(doc) }
+  );
+}
+
+// ==================== AI 分析 ====================
+function generateAIAnalysis(data) {
+  const wp = data.weapons||[];
+  if (wp.length<3) return '<div class="ai-title">🤖 AI 综合分析</div><div style="color:var(--label)">数据不足，无法生成分析</div>';
+
+  const kd=num(data.kd), kills=num(data.kills), deaths=num(data.deaths), winRate=num(data.winRate);
+  const hs=num(data.headshots), ad=num(data.ad), survive=parseFloat(String(data.avgSurvive||'').replace('s',''));
+  const mvp=num(data.mvpCount), matches=num(data.totalMatches), totalH=num(data.totalTime);
+  const tR=num(data.tRounds), ctR=num(data.ctRounds), doubleK=num(data.doubleKill);
+
+  const top3=wp.slice(0,3), totalK=wp.reduce((s,w)=>s+w.kills,0);
+  const f=(id)=>(wp.find(w=>w.id===id)||{}).kills||0;
+  const akK=f(28),m4K=f(22),awpK=f(18),deK=f(26),xmK=f(4),m249K=f(20),sgK=f(27),augK=f(8),scoutK=f(3),galilK=f(14),famasK=f(15);
+  const wc=wp.filter(w=>w.kills>100).length;
+  const h=(id)=>parseInt((wp.find(w=>w.id===id)||{}).hsRate)||0;
+  const akHS=h(28),m4HS=h(22),awpHS=h(18),deHS=h(26);
+  const rifleHS=(akK+m4K>0)?Math.round((akK*akHS+m4K*m4HS)/(akK+m4K)):0;
+  const rifleK=akK+m4K;
+
+  let grade='C',gCls='grade-c';
+  if(rifleK>40000&&rifleHS>=30&&wc>=7){grade='S';gCls='grade-s';}
+  else if(rifleK>15000&&rifleHS>=24&&wc>=5){grade='A';gCls='grade-a';}
+  else if(rifleK>3000&&wc>=3){grade='B';gCls='grade-b';}
+  const gLabel={S:'顶级大师',A:'优秀枪手',B:'稳定枪手',C:'成长中'};
+  const gDesc={S:'各方面数据均达到顶级水准',A:'综合实力优秀，枪法和意识俱佳',B:'发挥稳定，有进一步提升空间',C:'仍在成长，每一局都在进步'};
+
+  const L=[];
+  L.push(`<div class="ai-title">🤖 AI 综合分析</div>`);
+  L.push(`<div style="margin-bottom:12px;">综合评级 <span class="ai-grade ${gCls}">${grade}</span> <span style="font-size:11px;color:var(--label)">${gLabel[grade]}</span> — ${gDesc[grade]}</div>`);
+
+  // 1. 玩家画像
+  L.push(`<div class="ai-section"><div class="ai-section-title">🧑 玩家画像</div>`);
+  const profile=[];
+  if(kd!==null&&ad!==null){
+    if(kd>=2.5&&ad>=200) profile.push('你是典型的<span class="em">突破手（Entry Fragger）</span>——走在队伍最前面，枪一响对方先倒。');
+    else if(kd>=1.8) profile.push('打法<span class="em">稳健高效</span>，不追求花哨但每一枪都在做事，是团队可靠的火力支点。');
+    else if(kd>=1.2) profile.push('均衡型选手——<span class="em">攻守都有</span>一手，灵活多变，战术执行到位。');
+    else profile.push('热血冲锋型——<span class="em">敢打敢拼</span>，享受对枪的每一帧，战斗欲望拉满。');
+  }
+  if(survive>=50) profile.push('生存意识<span class="em">一流</span>，不是那种动不动就白给的选手，懂得活着才有输出。');
+  if(tR!==null&&ctR!==null&&tR+ctR>0){
+    const tp=Math.round(tR/(tR+ctR)*100);
+    if(tp>=65) profile.push(`${tp}% 局在T方——<span class="em">进攻DNA</span>刻在骨子里，主动出击是你的节奏。`);
+    else if(tp<=35) profile.push(`${100-tp}% 局在CT方——<span class="em">防守大师</span>，阵地战和卡点更拿手。`);
+    else profile.push(`阵营<span class="em">均衡分布</span>（T:${tp}%/CT:${100-tp}%），攻防兼备。`);
+  }
+  L.push(profile.join(' '));
+  L.push(`</div>`);
+
+  // 2. 核心战力
+  L.push(`<div class="ai-section"><div class="ai-section-title">⚡ 核心战力</div>`);
+  const stats=[];
+  if(kd!==null&&kills!==null&&deaths!==null){
+    if(kd>=2.5) stats.push(`KD <span class="em">${data.kd}</span> 属于<span class="em">顶尖突破手</span>级别，正面对枪胜率极高（${data.kills}杀/${data.deaths}死）。`);
+    else if(kd>=1.8) stats.push(`KD <span class="em">${data.kd}</span> 表现<span class="em">优秀</span>，是队伍中的稳定火力点（${data.kills}杀/${data.deaths}死）。`);
+    else if(kd>=1.2) stats.push(`KD <span class="em">${data.kd}</span> 属于<span class="good">合格步枪手</span>，继续提升预瞄可冲击更高分段。`);
+    else stats.push(`KD <span class="em">${data.kd}</span> 偏低，建议<span class="warn">多练习死斗</span>提升枪法稳定性。`);
+  }
+  if(ad!==null){
+    if(ad>=200) stats.push(`场均伤害 <span class="em">${data.ad}</span>，输出<span class="em">恐怖</span>——每局都在制造巨大压力，子弹转化率极高。`);
+    else if(ad>=120) stats.push(`场均伤害 <span class="em">${data.ad}</span>，输出稳定在线。`);
+    else stats.push(`场均伤害 <span class="warn">${data.ad}</span>，建议更多参与正面交火积累经验。`);
+  }
+  if(hs!==null){
+    if(hs>=38) stats.push(`爆头率 <span class="em">${hs}%</span>，预瞄<span class="em">教科书级别</span>——准星基本粘在敌人头上。`);
+    else if(hs>=28) stats.push(`爆头率 <span class="good">${hs}%</span>，瞄准习惯良好，头线意识不错。`);
+    else stats.push(`爆头率 <span class="warn">${hs}%</span>——抬高准星，把预瞄点放在头线高度，练习死斗见效最快。`);
+  }
+  if(survive>=50) stats.push(`场均存活 <span class="em">${data.avgSurvive}</span>——节奏把控出色，不轻易白给。`);
+  else if(survive<30&&survive) stats.push(`场均存活 <span class="warn">${data.avgSurvive}</span>——节奏偏急，适当放慢脚步胜率会更高。`);
+  if(winRate!==null){
+    if(winRate>=57) stats.push(`胜率 <span class="em">${winRate}%</span>，Carry能力过硬，能稳定带领队伍赢下比赛。`);
+    else if(winRate<43) stats.push(`胜率 <span class="warn">${winRate}%</span> 偏低，建议多关注小地图和团队配合。`);
+  }
+  if(mvp!==null&&matches!==null&&matches>0){
+    const mr=((mvp/matches)*100).toFixed(1);
+    if(parseFloat(mr)>=8) stats.push(`<span class="em">${mvp}</span> 次MVP（率${mr}%）——终结比赛的能力<span class="em">出类拔萃</span>，经常是全场最亮的那个人。`);
+    else if(parseFloat(mr)>=3) stats.push(`<span class="em">${mvp}</span> 次MVP（率${mr}%），关键时刻能站得出来。`);
+  }
+  L.push(stats.join('<br>'));
+  L.push(`</div>`);
+
+  // 3. 武器体系
+  L.push(`<div class="ai-section"><div class="ai-section-title">🔫 武器体系</div>`);
+  const t1=WEAPON_NAMES[top3[0].id]||'?',t2=WEAPON_NAMES[top3[1].id]||'?',t3=WEAPON_NAMES[top3[2].id]||'?';
+  const p1=Math.round(top3[0].kills/totalK*100),p2=Math.round(top3[1].kills/totalK*100),p3=Math.round(top3[2].kills/totalK*100);
+  L.push(`Top 3：<span class="em">${t1}</span>(${p1}%) · <span class="em">${t2}</span>(${p2}%) · <span class="em">${t3}</span>(${p3}%)`);
+
+  if(akK>m4K*1.5) L.push('<span class="em">AK 信仰者</span>——暴力突破，压枪是刻进肌肉记忆的本能，AK使用量碾压M4说明你自信且激进。');
+  else if(m4K>akK*1.5) L.push('<span class="em">M4 精准流</span>——弹道控制细腻，更偏爱精准点射，打法偏向控制型。');
+  else L.push('<span class="em">AK/M4 双修</span>——根据阵营和地图灵活切换，两把步枪都拿得出手。');
+
+  if(awpK>2000) L.push(`AWP <span class="em">王牌</span>(${awpK.toLocaleString()}杀)——开镜即威慑，主力狙击位，远程统治力拉满。`);
+  else if(awpK>500) L.push(`AWP <span class="good">副修</span>(${awpK.toLocaleString()}杀)，有需要时能顶上。`);
+  if(deK>2000) L.push(`沙鹰 <span class="em">王牌</span>(${deK.toLocaleString()}杀)——ECO局也能翻盘，手枪功底深厚。`);
+  if(xmK>500) L.push(`XM1014 ${xmK.toLocaleString()}杀——<span class="warn">近战狂人</span>属性拉满。`);
+  if(m249K>200) L.push(`M249 ${m249K}杀——<span class="warn">火力不足恐惧症</span>患者。`);
+  L.push(`</div>`);
+
+  // 4. 精准度矩阵
+  L.push(`<div class="ai-section"><div class="ai-section-title">🎯 精准度矩阵</div>`);
+  const acc=[];
+  if(akHS>0) acc.push(`AK：<span class="${akHS>=38?'em':akHS>=28?'good':'warn'}">${akHS}%</span>${akHS>=38?' ⭐':''}`);
+  if(m4HS>0) acc.push(`M4：<span class="${m4HS>=38?'em':m4HS>=28?'good':'warn'}">${m4HS}%</span>${m4HS>=28?' ⭐':''}`);
+  if(awpHS>0) acc.push(`AWP：${awpHS}%${awpHS>=20?' <span class="good">盲狙选手</span>':''}`);
+  if(deHS>=30) acc.push(`沙鹰：<span class="em">${deHS}%</span>`);
+  L.push(acc.join(' &nbsp;|&nbsp; '));
+  L.push(`</div>`);
+
+  // 5. 数据分析
+  L.push(`<div class="ai-section"><div class="ai-section-title">📊 数据分析</div>`);
+  const facts=[];
+  if(kills!==null&&totalH!==null&&totalH>0) facts.push(`平均每小时 <span class="em">${Math.round(kills/totalH)}</span> 击杀——输出密度一目了然。`);
+  if(totalH!==null) facts.push(`累计<span class="em">${data.totalTime}</span>游戏时间——${totalH>2000?'经验丰富的老兵，地图理解深入骨髓':'持续的投入让枪法日益精进'}。`);
+  if(doubleK!==null&&doubleK>0) facts.push(`<span class="em">${doubleK}</span> 次一箭双雕——一枪两命的瞬间，多目标处理能力出色。`);
+  if(top3[0]&&totalK>0){
+    const r=Math.round(top3[0].kills/totalK*100);
+    if(r>55) facts.push(`对${t1}的依赖度高达${r}%——<span class="warn">真正的本命武器</span>，这把枪已经刻进你的DNA。`);
+  }
+  if(akK>0&&m4K>0){
+    const r=Math.round(akK/(akK+m4K)*100);
+    facts.push(`AK占比 ${r}%——${r>55?'偏向<span class="em">暴力突脸</span>流派':'<span class="good">攻守平衡</span>的典范'}。`);
+  }
+  const rare=[];
+  if(sgK>300) rare.push(`SG552(${sgK.toLocaleString()})`);
+  if(augK>300) rare.push(`AUG(${augK.toLocaleString()})`);
+  if(scoutK>300) rare.push(`Scout(${scoutK.toLocaleString()})`);
+  if(galilK>800) rare.push(`Galil(${galilK.toLocaleString()})`);
+  if(famasK>800) rare.push(`FAMAS(${famasK.toLocaleString()})`);
+  if(rare.length>0) facts.push(`冷门武器也玩得转：${rare.join('、')}有<span class="good">不俗表现</span>——武器理解全面。`);
+  if(wc>=12) facts.push(`武器池 <span class="em">${wc}</span> 把（>100杀）——军火库级别的广度，不挑枪，什么都能杀。`);
+  L.push(facts.map(f=>'· '+f).join('<br>'));
+  L.push(`</div>`);
+
+  // 6. 提升路线
+  L.push(`<div class="ai-section"><div class="ai-section-title">💡 提升路线</div>`);
+  const tips=[];
+  if(akHS>=40&&m4HS>=38) tips.push('<span class="em">🎯 枪法已达精英级</span>——继续保持训练量，你的爆头线已经是教科书水平。');
+  else if(akHS>=32&&m4HS>=30) tips.push('<span class="good">🎯 枪法在优秀水平</span>——每天死斗10分钟保持手感，重点练前7发弹道控制。');
+  else if(akHS>=25||m4HS>=25) tips.push('<span class="warn">🎯 爆头率有提升空间</span>——每天死斗服15分钟刻意练习头线预瞄，准星抬高到颈部高度。');
+  else if(akHS>0||m4HS>0) tips.push('<span class="warn">🎯 爆头率急需提升</span>——建议每天20分钟死斗专练爆头，使用USP只打头，一个月可提升8%+。');
+  if(kd!==null){
+    if(kd>=2.5) tips.push('<span class="em">📊 KD已属顶级</span>——保持侵略性的同时注意残局站位，你的击杀效率不需要再提升了。');
+    else if(kd>=1.8) tips.push('<span class="good">📊 KD表现优秀</span>——可以通过改进道具使用和预瞄习惯冲击KD 2.0+。');
+    else if(kd>=1.2) tips.push('<span class="warn">📊 KD有提升空间</span>——多注意小地图信息，减少不必要的死亡，KD自然会上来。');
+    else tips.push('<span class="warn">📊 KD需要重点改善</span>——建议减少冒进冲锋，多利用掩体和闪光弹创造有利对枪条件。');
+  }
+  if(wc>=14) tips.push('<span class="em">🎒 武器池已是军火库级别</span>——你的适应力极强，任何局面都有对应方案。');
+  else if(wc>=10) tips.push(`<span class="good">🎒 武器理解全面（${wc}把>100杀）</span>——可以尝试练习AUG/SG552等冷门步枪增加战术多样性。`);
+  else if(wc>=6) tips.push(`<span class="warn">🎒 武器池中等（${wc}把）</span>——至少精通一把副武器和一把冲锋枪以应对ECO和反ECO局面。`);
+  else tips.push(`<span class="warn">🎒 武器池偏窄（仅${wc}把>100杀）</span>——重点拓展沙鹰、MP5或P90，不要让武器限制你的战术选择。`);
+  if(survive>=55) tips.push('<span class="em">⏱️ 生存能力顶尖</span>——你的耐心和地图意识非常出色，继续保持。');
+  else if(survive>=40) tips.push('<span class="good">⏱️ 生存能力良好</span>——节奏感不错，偶尔可以激进一点试探对手弱点。');
+  else if(survive>=30) tips.push('<span class="warn">⏱️ 存活时间偏短</span>——学会"退一步"，不是每次交火都必须分出胜负。');
+  else if(survive) tips.push('<span class="warn">⏱️ 存活时间太短</span>——放慢节奏！利用掩体和烟雾弹争取更好的对枪位置，活着才有输出。');
+  if(mvp!==null&&matches!==null&&matches>0){
+    const mr=((mvp/matches)*100);
+    if(mr>=10) tips.push('<span class="em">👑 MVP率极高</span>——你是团队的绝对核心，接下来多培养指挥和大局观能力。');
+    else if(mr>=5) tips.push('<span class="good">👑 MVP表现不错</span>——在关键局多沟通、多指挥，可以进一步提升影响力。');
+    else if(mr>=2) tips.push('<span class="warn">👑 MVP率偏低</span>——多主动承担突破或残局角色，增加自己对比赛结果的影响力。');
+  }
+  if(tR!==null&&ctR!==null&&tR+ctR>0){
+    const tp=Math.round(tR/(tR+ctR)*100);
+    if(tp>75) tips.push('<span class="warn">🔴 阵营严重偏T</span>——建议多打CT方训练防守意识，全面的选手不挑边。');
+    else if(tp<25) tips.push('<span class="warn">🔵 阵营严重偏CT</span>——多尝试T方突破，进攻能力需要在实战中打磨。');
+    else if(tp>60||tp<40) tips.push('<span class="good">⚖️ 阵营略微偏好一方</span>——可以刻意在对侧多打几局，让攻防两端更加均衡。');
+  }
+  if(winRate!==null&&winRate<43) tips.push('<span class="warn">🏆 胜率偏低</span>——多关注团队配合和地图控制，有时候少杀一个人但补上关键信息更能帮队伍赢。');
+  if(tips.length===0) tips.push('<span class="em">保持当前节奏</span>——稳定性是最被低估的武器，建议多看职业比赛录像提升意识和道具管理。');
+  L.push(tips.map(t=>'· '+t).join('<br>'));
+  L.push(`</div>`);
+
+  return L.join('');
+}
+
+// ==================== 渲染 ====================
+function buildWeaponHTML(weapons) {
+  const frag = document.createDocumentFragment();
+  if (!weapons||!weapons.length) {
+    const div = document.createElement('div');
+    div.style.cssText = 'text-align:center;color:var(--label);padding:20px;';
+    div.textContent = '未提取到武器数据';
+    frag.appendChild(div);
+    return frag;
+  }
+  const maxK = weapons[0].kills;
+  weapons.slice(0,12).forEach(w => {
+    const name = WEAPON_NAMES[w.id]||('武器#'+w.id);
+    const abbr = WPN_ABBR[w.id]||'?';
+    const cls = WPN_CLS[w.id]||'wpn-default';
+    const hsRate = parseInt(w.hsRate)||0;
+
+    const row = document.createElement('div');
+    row.className = 'weapon-row';
+
+    const icon = document.createElement('div');
+    icon.className = 'weapon-icon '+cls;
+    icon.textContent = abbr;
+
+    wpIconLoadQueue.push({ el:icon, url:w.icon, abbr, cls });
+    processWpIconQueue();
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'weapon-name';
+    nameEl.textContent = name;
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'weapon-bar-wrap';
+    const barFill = document.createElement('div');
+    barFill.className = 'weapon-bar-fill';
+    barFill.style.width = Math.round(w.kills/maxK*100)+'%';
+    barWrap.appendChild(barFill);
+
+    const killsEl = document.createElement('div');
+    killsEl.className = 'weapon-kills';
+    killsEl.textContent = '⚔️ '+w.kills.toLocaleString();
+
+    const hsEl = document.createElement('div');
+    hsEl.className = 'weapon-hs';
+    hsEl.innerHTML = 'HS '+w.hsRate+(hsRate>=40?' 🎯':'');
+
+    row.appendChild(icon);
+    row.appendChild(nameEl);
+    row.appendChild(barWrap);
+    row.appendChild(killsEl);
+    row.appendChild(hsEl);
+    frag.appendChild(row);
+  });
+  return frag;
+}
+
+const wpIconLoadQueue = [];
+let wpIconLoading = 0;
+function processWpIconQueue() {
+  while (wpIconLoading<3 && wpIconLoadQueue.length>0) {
+    const {el,url,abbr,cls} = wpIconLoadQueue.shift();
+    wpIconLoading++;
+    fetchImageAsDataUrl(url).then(dataUrl => {
+      if (dataUrl) {
+        el.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = '';
+        img.onerror = () => { el.textContent = abbr; el.classList.add(cls); };
+        el.appendChild(img);
+        el.classList.remove(cls);
+      }
+    }).catch(() => {}).finally(() => {
+      wpIconLoading--;
+      processWpIconQueue();
+    });
+  }
+}
+
+function animateCounter(elId, target) {
+  const el = $(elId);
+  if (!target||target===0) { el.textContent = '0'; return; }
+  const start=0, duration=1000, startTime=performance.now();
+  function step(now) {
+    const elapsed = now-startTime;
+    const progress = Math.min(elapsed/duration,1);
+    const eased = 1-Math.pow(1-progress,3);
+    el.textContent = Math.round(start+(target-start)*eased).toLocaleString();
+    if (progress<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderAll(data) {
+  emptyState.style.display = 'none';
+  dataPanel.style.display = 'flex';
+  exportRow.style.display = 'block';
+
+  // Hero
+  const avatarBox = $('heroAvatar');
+  const avatarUrl = data.avatarDataUrl||data.avatar;
+  if (avatarUrl) {
+    avatarBox.innerHTML = `<img src="${esc(avatarUrl)}" alt="" onerror="this.innerHTML='<span id=avatarLetter>${esc((data.nickname||'?')[0])}</span>'">`;
+  } else {
+    avatarBox.innerHTML = `<span id="avatarLetter">${esc((data.nickname||'?')[0])}</span>`;
+  }
+  $('heroName').textContent = data.nickname||'--';
+  $('heroId').textContent = data.id||'--';
+  $('heroLevel').textContent = data.level||'--';
+  $('heroRank').textContent = data.rank||'--';
+
+  // Grade
+  const kd=num(data.kd), ad=num(data.ad), hs=num(data.headshots);
+  const wr=num(data.winRate), mvp=num(data.mvpCount), matches=num(data.totalMatches);
+  const survive=parseFloat(String(data.avgSurvive||'').replace('s',''));
+  const tR=num(data.tRounds), ctR=num(data.ctRounds);
+
+  let cS=0,iS=0,sS=0,vS=0;
+  let dimsWithData=0;
+  if(kd!==null&&ad!==null&&hs!==null){ cS=Math.round(Math.min(kd/2.5,1)*45+Math.min(ad/130,1)*30+Math.min(hs/45,1)*25); dimsWithData++; }
+  if(wr!==null&&mvp!==null&&matches!==null&&matches>0){ const mr=((mvp/matches)*100); iS=Math.round(Math.min(wr/65,1)*40+Math.min(mr/12,1)*30); if(data.c4Plant&&data.c4Defuse) iS=Math.min(iS+15,100); dimsWithData++; } else if(wr!==null){ iS=Math.round(Math.min(wr/65,1)*60); dimsWithData++; }
+  if(survive&&kd!==null){ sS=Math.round(Math.min(survive/55,1)*55+Math.min(kd/2.5,1)*45); dimsWithData++; } else if(kd!==null){ sS=Math.round(Math.min(kd/2.5,1)*60); dimsWithData++; }
+  if(tR!==null&&ctR!==null&&tR+ctR>0){ vS+=Math.round(Math.min(tR,ctR)/Math.max(tR,ctR)*35); dimsWithData++; }
+  if(num(data.respawnTime)>30) vS+=10;
+  if(num(data.jumpTime)>15) vS+=10;
+  if(num(data.casualTime)>20) vS+=10;
+  if(data.weapons){ const wc=data.weapons.filter(w=>w.kills>100).length; vS+=Math.min(wc*3,25); dimsWithData=Math.max(dimsWithData,1); }
+  else if(vS===0&&dimsWithData===0){ vS=40; dimsWithData++; }
+  vS=Math.min(Math.max(vS,10),100);
+  const avg=Math.round((cS+iS+sS+vS)/Math.max(dimsWithData,1));
+  $('gradeBadge').textContent = avg>=78?'S':avg>=55?'A':avg>=32?'B':'C';
+
+  // Core
+  animateCounter('coreKills',num(data.kills)||0);
+  animateCounter('coreDeaths',num(data.deaths)||0);
+  const kdEl=$('coreKD');
+  if(kd!==null){ kdEl.textContent=data.kd; kdEl.className='card-value '+(kd>=2?'val-kd-gold':kd<1?'val-kd-red':'val-default'); }
+  else { kdEl.textContent='--'; kdEl.className='card-value val-default'; }
+  const wrEl=$('coreWinRate');
+  wrEl.textContent=data.winRate||'--'; wrEl.className='card-value val-default';
+
+  // AI
+  $('aiContent').innerHTML = generateAIAnalysis(data);
+
+  // Weapons
+  const wpList=$('weaponList'); wpList.innerHTML=''; wpList.appendChild(buildWeaponHTML(data.weapons));
+
+  // Combat
+  const cbt=[['⚔️ 总杀敌',data.kills],['☠️ 总阵亡',data.deaths],['📊 KD比',data.kd],['💥 场均伤害(AD)',data.ad],['🎯 爆头率',data.headshots],['⏱️ 平均存活',data.avgSurvive],['🏆 胜率',data.winRate],['🎮 混战局数',data.totalMatches],['✅ 胜利局数',data.wins],['🔴 土匪局数',data.tRounds],['🔵 警察局数',data.ctRounds],['💫 一箭双雕',data.doubleKill]];
+  $('combatGrid').innerHTML = cbt.map(([k,v])=>`<div class="kv-row"><span class="kv-key">${k}</span><span class="kv-val">${v||'--'}</span></div>`).join('');
+
+  // Time —— 注意：cscspt.com 不提供按月/按日的时长数据，时长始终为历史总计
+  const times=[['⚔️ 混战模式',data.hunzhanTime],['🔄 重生模式',data.respawnTime],['🦘 跳跃模式',data.jumpTime],['🏖️ 休闲模式',data.casualTime],['⏰ 全部总时长',data.totalTime]];
+  const maxT=Math.max(...times.map(([,v])=>parseFloat(v)||0),1);
+  const timeNote = currentMode === 'month' ? '<div style="font-size:10px;color:var(--label);text-align:center;margin-top:12px;opacity:0.6;">⚠️ 游戏时长数据为历史总计（网站不提供按月时长）</div>' : '';
+  $('timeList').innerHTML = times.map(([l,v])=>{ const h=parseFloat(v)||0; return `<div class="time-row"><span class="time-label">${l}</span><div class="time-bar-wrap"><div class="time-bar-fill" style="width:${Math.round(h/maxT*100)}%"></div></div><span class="time-value">${v||'--'}</span></div>`; }).join('') + timeNote;
+
+  // Honor
+  const honor=[['MVP次数',data.mvpCount],['冠军MVP',data.mvpGold],['亚军MVP',data.mvpSilver],['季军MVP',data.mvpBronze],['C4安装',data.c4Plant],['C4拆除',data.c4Defuse],['意外阵亡',data.accidents],['日最高杀敌1',data.dailyTopKill1],['日最高杀敌2',data.dailyTopKill2],['日最高杀敌3',data.dailyTopKill3],['一箭双雕',data.doubleKill]].filter(([,v])=>v);
+  $('honorGrid').innerHTML = honor.length ? honor.map(([k,v])=>`<div class="kv-row"><span class="kv-key">${k}</span><span class="kv-val">${v}</span></div>`).join('') : '<div style="text-align:center;color:var(--label);padding:20px;">未提取到荣誉数据</div>';
+
+  switchTab('tab-ai');
+}
+
+// ==================== Tab ====================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const tb = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  if (tb) tb.classList.add('active');
+  $('tabSelect').value = tabId;
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const tab = $(tabId);
+  if (tab) tab.classList.add('active');
+}
+
+$('tabBar').addEventListener('click', e => {
+  if (e.target.classList.contains('tab-btn')) switchTab(e.target.dataset.tab);
+});
+$('tabSelect').addEventListener('change', function() { switchTab(this.value); });
+
+// ==================== 导出 ====================
+let html2canvasLoaded = false;
+function loadHtml2canvas() {
+  return new Promise((resolve, reject) => {
+    if (html2canvasLoaded) { resolve(window.html2canvas); return; }
+    if (window.html2canvas) { html2canvasLoaded=true; resolve(window.html2canvas); return; }
+    const script = document.createElement('script');
+    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+    script.onload = () => { html2canvasLoaded=true; resolve(window.html2canvas); };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function exportPNG() {
+  const bgmBox = $('bgmBox');
+  const exportRowEl = $('exportRow');
+  bgmBox.style.display = 'none';
+  exportRowEl.style.display = 'none';
+  try {
+    const ht2c = await loadHtml2canvas();
+    const canvas = await ht2c(dataPanel, { backgroundColor:'#0a0c1a', scale:2, useCORS:true, logging:false });
+    const now = new Date();
+    const ts = now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'_'+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
+    const pid = extractId(input.value.trim())||'unknown';
+    const a = document.createElement('a');
+    a.download = `CS_${pid}_${ts}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  } catch(e) { alert('导出失败：'+e.message); }
+  finally { bgmBox.style.display = ''; exportRowEl.style.display = ''; }
+}
+$('btnExport').addEventListener('click', exportPNG);
+
+// ==================== 主流程 ====================
+let countdownTimer = null;
+let currentMode = 'total';
+
+async function analyze() {
+  const raw = input.value.trim();
+  if (!raw) return;
+  const playerId = extractId(raw);
+  if (!playerId) { showStatus('error','<div class="err-icon">🔗❌</div>无法识别玩家 ID，请检查输入'); return; }
+
+  const cached = getCached(playerId);
+  if (cached) {
+    if (cached.avatarDataUrl) cached.avatarDataUrl = cached.avatarDataUrl;
+    currentMode = 'total';
+    dataTypeTag.style.display = 'none';
+    renderAll(cached);
+    return;
+  }
+
+  currentMode = 'total';
+  dataTypeTag.style.display = 'none';
+  setLoading(true, '分析');
+  hideData();
+
+  const pageUrl = `https://www.cscspt.com/m/player/act/index/user_id/${playerId}.html`;
+  const html = await fetchWithFallbacks(pageUrl);
+  if (!html) {
+    setLoading(false);
+    showStatus('error','<div class="err-icon">🌐❌</div>无法获取数据（已尝试 ' + PROXIES.length + ' 个代理服务）<br><small>👉 试试：用 <b>node server.js</b> 启动本地代理服务器，然后访问 http://localhost:3000</small>');
+    return;
+  }
+
+  let data;
+  try {
+    data = parsePlayerData(html, playerId);
+  } catch(e) {
+    setLoading(false);
+    showStatus('error','<div class="err-icon">📋❌</div>解析页面数据时出错<br><small>页面结构可能已变更，请稍后重试</small>');
+    return;
+  }
+
+  if (!data||!data.nickname||data.nickname==='--') {
+    setLoading(false);
+    showStatus('error','<div class="err-icon">👤❌</div>未能解析到有效数据<br><small>可能原因：玩家不存在或页面结构已变更</small>');
+    return;
+  }
+
+  if (data.avatar) {
+    try { data.avatarDataUrl = await fetchImageAsDataUrl(data.avatar); } catch(e) { data.avatarDataUrl = null; }
+  }
+
+  setCached(playerId, data);
+  renderAll(data);
+  setLoading(false);
+  clearStatus();
+}
+
+// ==================== 近30天数据（解析页面内的月 tab） ====================
+async function monthAnalyze() {
+  const raw = input.value.trim();
+  if (!raw) return;
+  const playerId = extractId(raw);
+  if (!playerId) { showStatus('error','<div class="err-icon">🔗❌</div>无法识别玩家 ID，请检查输入'); return; }
+
+  currentMode = 'month';
+  setLoading(true, '查月');
+  hideData();
+
+  // 月数据在同一个页面内，通过不同的 tab ID 获取
+  const pageUrl = `https://www.cscspt.com/m/player/act/index/user_id/${playerId}.html`;
+  const html = await fetchWithFallbacks(pageUrl);
+  if (!html) {
+    setLoading(false);
+    showStatus('error','<div class="err-icon">🌐❌</div>无法获取数据<br><small>已尝试 ' + PROXIES.length + ' 个代理服务</small>');
+    return;
+  }
+
+  let data;
+  try {
+    // 使用 parsePlayerMonthData 从月 tab 解析
+    data = parsePlayerMonthData(html, playerId);
+  } catch(e) {
+    setLoading(false);
+    showStatus('error','<div class="err-icon">📋❌</div>解析近30天数据时出错<br><small>页面结构可能已变更</small>');
+    return;
+  }
+
+  // 检查是否解析到了月数据（月 tab 可能没有击杀/阵亡数据，需要回退）
+  const hasMonthData = data && data.nickname && data.nickname !== '--'
+    && (num(data.kills) !== null || num(data.totalMatches) !== null);
+
+  if (!hasMonthData) {
+    // 月 tab 没解析到数据，尝试用总数据但标记为月
+    data = parsePlayerData(html, playerId);
+    if (!data || !data.nickname || data.nickname === '--') {
+      setLoading(false);
+      showStatus('error','<div class="err-icon">👤❌</div>未获取到数据<br><small>该玩家可能无对战记录</small>');
+      return;
+    }
+  }
+
+  if (data.avatar) {
+    try { data.avatarDataUrl = await fetchImageAsDataUrl(data.avatar); } catch(e) { data.avatarDataUrl = null; }
+  }
+
+  dataTypeTag.style.display = 'block';
+  dataTypeTag.textContent = '📅 近30天数据';
+
+  renderAll(data);
+  setLoading(false);
+  clearStatus();
+}
+
+// ==================== UI ====================
+function setLoading(loading, label = '分析') {
+  btn.disabled = loading;
+  monthBtn.disabled = loading;
+  btn.textContent = loading ? `${label}中...` : '分析';
+  monthBtn.textContent = loading ? '📅 等待中...' : '📅 近30天';
+  if (loading) {
+    const totalSec = 15;
+    showStatus('loading', `<span class="crosshair"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="2"/><line x1="16" y1="2" x2="16" y2="9"/><line x1="16" y1="23" x2="16" y2="30"/><line x1="2" y1="16" x2="9" y2="16"/><line x1="23" y1="16" x2="30" y2="16"/></svg></span>正在加载${label==='查月'?'近30天数据':'玩家数据'}...<div class="loading-progress"><div class="pbar-track"><div class="pbar-fill" id="progressFill"></div></div><div class="pbar-label"><span id="progressText">${totalSec}</span>s</div></div>`);
+    const startTime = performance.now();
+    const duration = totalSec * 1000;
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const fill = document.getElementById('progressFill');
+      const text = document.getElementById('progressText');
+      if (fill) fill.style.width = (progress * 100) + '%';
+      if (text) text.textContent = Math.max(0, Math.ceil((1 - progress) * totalSec));
+      if (progress < 1) { countdownTimer = requestAnimationFrame(animate); }
+    }
+    countdownTimer = requestAnimationFrame(animate);
+  } else {
+    if (countdownTimer) { cancelAnimationFrame(countdownTimer); countdownTimer = null; }
+  }
+}
+
+function showStatus(type, msg) { statusBox.className='status-box '+type; statusBox.innerHTML=msg; }
+function clearStatus() { statusBox.className='status-box'; statusBox.innerHTML=''; }
+function hideData() { dataPanel.style.display='none'; exportRow.style.display='none'; emptyState.style.display='flex'; }
+
+// ==================== 事件 ====================
+input.addEventListener('keydown', e => { if (e.key==='Enter') analyze(); });
+btn.addEventListener('click', analyze);
+monthBtn.addEventListener('click', monthAnalyze);
+
+// BGM
+(function(){
+  const a=$('bgmPlayer'), b=$('bgmBtn');
+  b.addEventListener('click', function(e){ e.stopPropagation(); if(a.paused){a.play();b.textContent='⏸️';}else{a.pause();b.textContent='▶️';} });
+  a.addEventListener('play',()=>{b.textContent='⏸️';});
+  a.addEventListener('pause',()=>{b.textContent='▶️';});
+  document.addEventListener('click',function bgmStart(){ a.play().then(()=>{b.textContent='⏸️';}).catch(()=>{}); document.removeEventListener('click',bgmStart); },{once:true});
+})();
+
+})();
 </script>
 </body>
 </html>
